@@ -244,8 +244,10 @@ public partial class SettingsWindow : Window
     private void LoadFishingSettings()
     {
         var f = _settings.Fishing;
-        TxtCaptureX.Text = f.CaptureX.ToString(); TxtCaptureY.Text = f.CaptureY.ToString();
-        TxtCaptureW.Text = f.CaptureWidth.ToString(); TxtCaptureH.Text = f.CaptureHeight.ToString();
+        TxtCaptureX.Text = f.CaptureXPercent.ToString("F1");
+        TxtCaptureY.Text = f.CaptureYPercent.ToString("F1");
+        TxtCaptureW.Text = f.CaptureWidthPercent.ToString("F1");
+        TxtCaptureH.Text = f.CaptureHeightPercent.ToString("F1");
         SetPollingRadio(f.PollingIntervalMs);
         ChkAutoFish.IsChecked = f.AutoFishEnabled; ChkDebugLog.IsChecked = f.DebugLogOcr;
         ChkDebugOverlay.IsChecked = f.DebugOverlayEnabled;
@@ -266,8 +268,10 @@ public partial class SettingsWindow : Window
     private void SaveFishingSettings()
     {
         var f = _settings.Fishing;
-        f.CaptureX = int.Parse(TxtCaptureX.Text); f.CaptureY = int.Parse(TxtCaptureY.Text);
-        f.CaptureWidth = int.Parse(TxtCaptureW.Text); f.CaptureHeight = int.Parse(TxtCaptureH.Text);
+        f.CaptureXPercent = double.Parse(TxtCaptureX.Text);
+        f.CaptureYPercent = double.Parse(TxtCaptureY.Text);
+        f.CaptureWidthPercent = double.Parse(TxtCaptureW.Text);
+        f.CaptureHeightPercent = double.Parse(TxtCaptureH.Text);
         f.PollingIntervalMs = GetPollingValue();
         f.AutoFishEnabled = ChkAutoFish.IsChecked == true; f.DebugLogOcr = ChkDebugLog.IsChecked == true;
         f.DebugOverlayEnabled = ChkDebugOverlay.IsChecked == true;

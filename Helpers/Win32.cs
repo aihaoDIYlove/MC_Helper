@@ -189,4 +189,16 @@ public static class Win32
 
     [DllImport("user32.dll")]
     public static extern void PostQuitMessage(int nExitCode);
+
+    // ── 屏幕尺寸（物理像素） ──────────────────────
+
+    public const int SM_CXSCREEN = 0;
+    public const int SM_CYSCREEN = 1;
+
+    [DllImport("user32.dll")]
+    public static extern int GetSystemMetrics(int nIndex);
+
+    /// <summary>物理像素屏幕宽高（不受 DPI 缩放影响，与 CopyFromScreen 一致）</summary>
+    public static int PhysicalScreenWidth => GetSystemMetrics(SM_CXSCREEN);
+    public static int PhysicalScreenHeight => GetSystemMetrics(SM_CYSCREEN);
 }

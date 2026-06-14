@@ -17,6 +17,9 @@ public partial class FishingOverlay : Window
     private FishingSettings _settings = null!;
     private double _dpiScaleX = 1.0, _dpiScaleY = 1.0;
 
+    // 拖拽期间的物理像素工作值（操作时直接修改，保存时转百分比）
+    private int _px, _py, _pw, _ph;
+
     private bool _isSelecting;
     private bool _isAdjusting;
     private Rect _savedRect;
@@ -50,6 +53,7 @@ public partial class FishingOverlay : Window
             _dpiScaleX = source.CompositionTarget.TransformToDevice.M11;
             _dpiScaleY = source.CompositionTarget.TransformToDevice.M22;
         }
+        SyncPixelsFromSettings();
         SetClickThrough(true);
         UpdateSelectionVisual();
     }
@@ -84,17 +88,31 @@ public partial class FishingOverlay : Window
 
     public void UpdateFromSettings()
     {
+        SyncPixelsFromSettings();
         UpdateSelectionVisual();
+    }
+
+    /// <summary>从百分比设置同步到物理像素工作值</summary>
+    private void SyncPixelsFromSettings()
+    {
+        var (x, y, w, h) = CaptureRegionHelper.ToPixels(_settings);
+        _px = x; _py = y; _pw = w; _ph = h;
+    }
+
+    /// <summary>把当前物理像素工作值写入百分比设置</summary>
+    private void SavePixelsToSettings()
+    {
+        CaptureRegionHelper.FromPixels(_px, _py, _pw, _ph, _settings);
     }
 
     private void UpdateSelectionVisual()
     {
         var sw = SystemParameters.PrimaryScreenWidth;
         var sh = SystemParameters.PrimaryScreenHeight;
-        var sx = _settings.CaptureX / _dpiScaleX;
-        var sy = _settings.CaptureY / _dpiScaleY;
-        var sw2 = Math.Max(1, _settings.CaptureWidth / _dpiScaleX);
-        var sh2 = Math.Max(1, _settings.CaptureHeight / _dpiScaleY);
+        var sx = _px / _dpiScaleX;
+        var sy = _py / _dpiScaleY;
+        var sw2 = Math.Max(1, _pw / _dpiScaleX);
+        var sh2 = Math.Max(1, _ph / _dpiScaleY);
 
         OverlayPath.Data = new CombinedGeometry(GeometryCombineMode.Exclude,
             new RectangleGeometry(new Rect(0, 0, sw, sh)),
@@ -113,7 +131,7 @@ public partial class FishingOverlay : Window
         double labelX = sx, labelY = sy - 28;
         if (labelY < 0) labelY = sy + sh2 + 6;
         SizeLabel.Margin = new Thickness(labelX, labelY, 0, 0);
-        SizeLabelText.Text = $"{_settings.CaptureWidth} × {_settings.CaptureHeight}";
+        SizeLabelText.Text = $"{_pw} × {_ph}";
     }
 
     // ── 选区模式切换 ─────────────────────────────
@@ -122,9 +140,8 @@ public partial class FishingOverlay : Window
     {
         if (_isSelecting || _isAdjusting) return;
 
-        _savedRect = new Rect(
-            _settings.CaptureX, _settings.CaptureY,
-            _settings.CaptureWidth, _settings.CaptureHeight);
+        SyncPixelsFromSettings();
+        _savedRect = new Rect(_px, _py, _pw, _ph);
 
         _isSelecting = true;
         SelectModeChanged?.Invoke(true);
@@ -179,11 +196,10 @@ public partial class FishingOverlay : Window
 
         if (!save && _isAdjusting)
         {
-            _settings.CaptureX = (int)_savedRect.X;
-            _settings.CaptureY = (int)_savedRect.Y;
-            _settings.CaptureWidth = (int)_savedRect.Width;
-            _settings.CaptureHeight = (int)_savedRect.Height;
+            _px = (int)_savedRect.X; _py = (int)_savedRect.Y;
+            _pw = (int)_savedRect.Width; _ph = (int)_savedRect.Height;
         }
+        SavePixelsToSettings();
 
         _isSelecting = false;
         _isAdjusting = false;
@@ -242,10 +258,10 @@ public partial class FishingOverlay : Window
     {
         _dragStart = e.GetPosition(this);
         _isDragging = true;
-        _settings.CaptureX = (int)(_dragStart.X * _dpiScaleX);
-        _settings.CaptureY = (int)(_dragStart.Y * _dpiScaleY);
-        _settings.CaptureWidth = 1;
-        _settings.CaptureHeight = 1;
+        _px = (int)(_dragStart.X * _dpiScaleX);
+        _py = (int)(_dragStart.Y * _dpiScaleY);
+        _pw = 1;
+        _ph = 1;
         CaptureMouse();
     }
 
@@ -257,13 +273,13 @@ public partial class FishingOverlay : Window
         var y1 = Math.Min(_dragStart.Y, cur.Y);
         var x2 = Math.Max(_dragStart.X, cur.X);
         var y2 = Math.Max(_dragStart.Y, cur.Y);
-        _settings.CaptureX = (int)(x1 * _dpiScaleX);
-        _settings.CaptureY = (int)(y1 * _dpiScaleY);
-        _settings.CaptureWidth = (int)((x2 - x1) * _dpiScaleX);
-        _settings.CaptureHeight = (int)((y2 - y1) * _dpiScaleY);
+        _px = (int)(x1 * _dpiScaleX);
+        _py = (int)(y1 * _dpiScaleY);
+        _pw = (int)((x2 - x1) * _dpiScaleX);
+        _ph = (int)((y2 - y1) * _dpiScaleY);
         UpdateSelectionVisual();
         SizeLabel.Visibility = Visibility.Visible;
-        SizeLabelText.Text = $"{_settings.CaptureWidth} × {_settings.CaptureHeight}";
+        SizeLabelText.Text = $"{_pw} × {_ph}";
     }
 
     private void OnDrawMouseUp(object sender, MouseButtonEventArgs e)
@@ -272,17 +288,15 @@ public partial class FishingOverlay : Window
         _isDragging = false;
         ReleaseMouseCapture();
 
-        if (_settings.CaptureWidth <= 10 && _settings.CaptureHeight <= 10 && _savedRect.Width > 10)
+        if (_pw <= 10 && _ph <= 10 && _savedRect.Width > 10)
         {
-            _settings.CaptureX = (int)_savedRect.X;
-            _settings.CaptureY = (int)_savedRect.Y;
-            _settings.CaptureWidth = (int)_savedRect.Width;
-            _settings.CaptureHeight = (int)_savedRect.Height;
+            _px = (int)_savedRect.X; _py = (int)_savedRect.Y;
+            _pw = (int)_savedRect.Width; _ph = (int)_savedRect.Height;
         }
         else
         {
-            if (_settings.CaptureWidth < 10) _settings.CaptureWidth = 10;
-            if (_settings.CaptureHeight < 10) _settings.CaptureHeight = 10;
+            if (_pw < 10) _pw = 10;
+            if (_ph < 10) _ph = 10;
         }
 
         UpdateSelectionVisual();
@@ -301,10 +315,10 @@ public partial class FishingOverlay : Window
         _dragStart = e.GetPosition(this);
         _isDragging = true;
 
-        var sx = _settings.CaptureX / _dpiScaleX;
-        var sy = _settings.CaptureY / _dpiScaleY;
-        var sw = _settings.CaptureWidth / _dpiScaleX;
-        var sh = _settings.CaptureHeight / _dpiScaleY;
+        var sx = _px / _dpiScaleX;
+        var sy = _py / _dpiScaleY;
+        var sw = _pw / _dpiScaleX;
+        var sh = _ph / _dpiScaleY;
         double cx = _dragStart.X, cy = _dragStart.Y;
         const double hz = 16;
 
@@ -343,22 +357,22 @@ public partial class FishingOverlay : Window
         switch (_dragMode)
         {
             case DragMode.Move:
-                _settings.CaptureX += dx; _settings.CaptureY += dy; break;
+                _px += dx; _py += dy; break;
             case DragMode.ResizeNW:
-                _settings.CaptureX += dx; _settings.CaptureY += dy;
-                _settings.CaptureWidth -= dx; _settings.CaptureHeight -= dy; break;
+                _px += dx; _py += dy;
+                _pw -= dx; _ph -= dy; break;
             case DragMode.ResizeNE:
-                _settings.CaptureY += dy;
-                _settings.CaptureWidth += dx; _settings.CaptureHeight -= dy; break;
+                _py += dy;
+                _pw += dx; _ph -= dy; break;
             case DragMode.ResizeSW:
-                _settings.CaptureX += dx;
-                _settings.CaptureWidth -= dx; _settings.CaptureHeight += dy; break;
+                _px += dx;
+                _pw -= dx; _ph += dy; break;
             case DragMode.ResizeSE:
-                _settings.CaptureWidth += dx; _settings.CaptureHeight += dy; break;
+                _pw += dx; _ph += dy; break;
         }
 
-        if (_settings.CaptureWidth < 10) _settings.CaptureWidth = 10;
-        if (_settings.CaptureHeight < 10) _settings.CaptureHeight = 10;
+        if (_pw < 10) _pw = 10;
+        if (_ph < 10) _ph = 10;
 
         _dragStart = cur;
         UpdateSelectionVisual();

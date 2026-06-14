@@ -195,7 +195,7 @@
                     <Border Background="#2C2C2E" CornerRadius="12" Padding="20" Margin="0,0,0,14">
                         <StackPanel>
                             <TextBlock Style="{StaticResource HeaderText}" Text="OCR 截图区域"/>
-                            <TextBlock Style="{StaticResource SubText}" Text="屏幕坐标，像素值" Margin="0,-6,0,10"/>
+                            <TextBlock Style="{StaticResource SubText}" Text="屏幕百分比 (0–100)" Margin="0,-6,0,10"/>
                             <Grid HorizontalAlignment="Left">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="30"/><ColumnDefinition Width="100"/>

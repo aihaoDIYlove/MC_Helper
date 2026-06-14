@@ -5,10 +5,14 @@ namespace MC_Helper.Models;
 /// </summary>
 public class FishingSettings
 {
-    public int CaptureX { get; set; } = 100;
-    public int CaptureY { get; set; } = 100;
-    public int CaptureWidth { get; set; } = 320;
-    public int CaptureHeight { get; set; } = 60;
+    /// <summary>截取区域 X 起点（屏幕宽度百分比，0-100）</summary>
+    public double CaptureXPercent { get; set; } = 84.8;
+    /// <summary>截取区域 Y 起点（屏幕高度百分比，0-100）</summary>
+    public double CaptureYPercent { get; set; } = 49.2;
+    /// <summary>截取区域宽度（屏幕宽度百分比，0-100）</summary>
+    public double CaptureWidthPercent { get; set; } = 14.6;
+    /// <summary>截取区域高度（屏幕高度百分比，0-100）</summary>
+    public double CaptureHeightPercent { get; set; } = 36.6;
     public int PollingIntervalMs { get; set; } = 200;
 
     public List<string> CastPhrases { get; set; } = new() { "浮漂甩出" };

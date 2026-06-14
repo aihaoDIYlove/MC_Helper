@@ -77,7 +77,8 @@ public class DetectionLoop : IDisposable
         _timer.Interval = TimeSpan.FromMilliseconds(_settings.PollingIntervalMs);
         _timer.Start();
         IsRunning = true;
-        Logger.Info($"检测已启动: 区域=({_settings.CaptureX},{_settings.CaptureY}) {_settings.CaptureWidth}x{_settings.CaptureHeight} 间隔={_settings.PollingIntervalMs}ms");
+        var (lx, ly, lw, lh) = CaptureRegionHelper.ToPixels(_settings);
+        Logger.Info($"检测已启动: 区域=({lx},{ly}) {lw}x{lh} 间隔={_settings.PollingIntervalMs}ms");
     }
 
     public void Stop()
@@ -140,11 +141,8 @@ public class DetectionLoop : IDisposable
 
         try
         {
-            using var frame = ScreenCapture.CaptureRegion(
-                _settings.CaptureX,
-                _settings.CaptureY,
-                _settings.CaptureWidth,
-                _settings.CaptureHeight);
+            var (cx, cy, cw, ch) = CaptureRegionHelper.ToPixels(_settings);
+            using var frame = ScreenCapture.CaptureRegion(cx, cy, cw, ch);
 
             IReadOnlyList<string> lines;
             try
