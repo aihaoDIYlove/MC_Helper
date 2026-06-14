@@ -32,7 +32,8 @@ public class TrayIcon : IDisposable
         if (_visible) return;
 
         _icon?.Dispose();
-        _icon = IconGenerator.CreateFishIcon();
+        _icon = Icon.ExtractAssociatedIcon(Environment.ProcessPath!)
+                ?? SystemIcons.Application;
 
         var nid = new NOTIFYICONDATA
         {
