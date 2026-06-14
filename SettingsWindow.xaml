@@ -116,7 +116,7 @@
 
             <TabControl x:Name="SettingsTabs" Grid.Row="1" Margin="20,8,20,0">
                 <!-- ═══ 快捷键 Tab ═══ -->
-                <TabItem Header="快捷键">
+                <TabItem Header="通用">
                     <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,0,14">
                         <StackPanel>
                             <Border Background="#2C2C2E" CornerRadius="12" Padding="20" Margin="0,0,0,14">
@@ -163,10 +163,10 @@
                                 </StackPanel>
                             </Border>
 
-                            <!-- 通用设置 -->
+                            <!-- Debug 设置 -->
                             <Border Background="#2C2C2E" CornerRadius="12" Padding="20" Margin="0,0,0,14">
                                 <StackPanel>
-                                    <TextBlock Style="{StaticResource HeaderText}" Text="通用"/>
+                                    <TextBlock Style="{StaticResource HeaderText}" Text="Debug 设置"/>
                                     <CheckBox x:Name="ChkDoubleClickTrayExit"
                                               Content="双击托盘图标强制退出&#10;(失焦时可用 Tab 导航到托盘，按两下空格退出)"
                                               Margin="0,4,0,0"/>
