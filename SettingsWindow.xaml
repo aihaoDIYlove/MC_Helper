@@ -1,0 +1,331 @@
+<Window x:Class="MC_Helper.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="MC_Helper 设置"
+        Width="560" Height="640"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Topmost="True"
+        Background="Transparent">
+
+    <Window.Resources>
+        <Style TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#EBEBF5"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
+        <Style x:Key="SubText" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#98989D"/>
+            <Setter Property="FontSize" Value="11"/>
+        </Style>
+        <Style x:Key="HeaderText" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+        </Style>
+        <Style TargetType="TextBox">
+            <Setter Property="Background" Value="#2C2C2E"/>
+            <Setter Property="Foreground" Value="#EBEBF5"/>
+            <Setter Property="BorderBrush" Value="#48484A"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CaretBrush" Value="#0A84FF"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Padding" Value="8,4"/>
+        </Style>
+        <Style TargetType="Button">
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style TargetType="CheckBox">
+            <Setter Property="Foreground" Value="#EBEBF5"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
+        <Style TargetType="RadioButton">
+            <Setter Property="Foreground" Value="#EBEBF5"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
+        <Style TargetType="TabControl">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+        <Style TargetType="TabItem">
+            <Setter Property="Foreground" Value="#98989D"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Padding" Value="16,10"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="0,0,0,2"
+                                Padding="{TemplateBinding Padding}"
+                                Cursor="Hand">
+                            <ContentPresenter ContentSource="Header"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Foreground" Value="#FFFFFF"/>
+                                <Setter Property="BorderBrush" Value="#0A84FF"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Foreground" Value="#EBEBF5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Border CornerRadius="16" Background="#E81C1C1E"
+            BorderBrush="#3A3A3C" BorderThickness="1" Margin="4">
+        <Border.Effect>
+            <DropShadowEffect Color="#000000" BlurRadius="40" ShadowDepth="0" Opacity="0.6"/>
+        </Border.Effect>
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <Border Grid.Row="0" Background="#2C2C2E" CornerRadius="16,16,0,0"
+                    Padding="20,14" MouseLeftButtonDown="TitleBar_Drag">
+                <Grid>
+                    <TextBlock Text="设置" FontSize="17" FontWeight="SemiBold" Foreground="#FFFFFF"/>
+                    <Button Content="✕" Width="30" Height="30" HorizontalAlignment="Right"
+                            Background="Transparent" Foreground="#888" BorderBrush="Transparent"
+                            FontSize="15" Click="BtnCancel_Click"/>
+                </Grid>
+            </Border>
+
+            <TabControl x:Name="SettingsTabs" Grid.Row="1" Margin="20,8,20,0">
+                <!-- ═══ 快捷键 Tab ═══ -->
+                <TabItem Header="快捷键">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,0,14">
+                        <StackPanel>
+                            <Border Background="#2C2C2E" CornerRadius="12" Padding="20" Margin="0,0,0,14">
+                                <StackPanel>
+                                    <TextBlock Style="{StaticResource HeaderText}" Text="模式切换"/>
+                                    <TextBlock Style="{StaticResource SubText}" Text="支持单键、组合键、鼠标侧键" Margin="0,-6,0,10"/>
+                                    <Grid Margin="0,0,0,10">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="120"/><ColumnDefinition Width="160"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                        <TextBlock Text="上一个模式" VerticalAlignment="Center"/>
+                                        <TextBox x:Name="TxtPrevModeKey" Grid.Column="1" Width="150" IsReadOnly="True" VerticalAlignment="Center"/>
+                                        <Button x:Name="BtnBindPrevMode" Grid.Column="2" Content="🔴 点击绑定" Background="#3A3A3C" Foreground="#EBEBF5" BorderBrush="Transparent" Width="90" Height="30" Click="BtnBindPrevMode_Click"/>
+                                    </Grid>
+                                    <Grid Margin="0,0,0,10">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="120"/><ColumnDefinition Width="160"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                        <TextBlock Text="下一个模式" VerticalAlignment="Center"/>
+                                        <TextBox x:Name="TxtNextModeKey" Grid.Column="1" Width="150" IsReadOnly="True" VerticalAlignment="Center"/>
+                                        <Button x:Name="BtnBindNextMode" Grid.Column="2" Content="🔴 点击绑定" Background="#3A3A3C" Foreground="#EBEBF5" BorderBrush="Transparent" Width="90" Height="30" Click="BtnBindNextMode_Click"/>
+                                    </Grid>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="120"/><ColumnDefinition Width="160"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                        <TextBlock Text="快速启停" VerticalAlignment="Center"/>
+                                        <TextBox x:Name="TxtQuickToggleKey" Grid.Column="1" Width="150" IsReadOnly="True" VerticalAlignment="Center"/>
+                                        <Button x:Name="BtnBindQuickToggle" Grid.Column="2" Content="🔴 点击绑定" Background="#3A3A3C" Foreground="#EBEBF5" BorderBrush="Transparent" Width="90" Height="30" Click="BtnBindQuickToggle_Click"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Background="#2C2C2E" CornerRadius="12" Padding="20" Margin="0,0,0,14">
+                                <StackPanel>
+                                    <TextBlock Style="{StaticResource HeaderText}" Text="方案切换（点击模式）"/>
+                                    <TextBlock Style="{StaticResource SubText}" Text="在点击模式下快速切换方案" Margin="0,-6,0,10"/>
+                                    <Grid Margin="0,0,0,10">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="120"/><ColumnDefinition Width="160"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                        <TextBlock Text="上一个方案" VerticalAlignment="Center"/>
+                                        <TextBox x:Name="TxtPrevPresetKey" Grid.Column="1" Width="150" IsReadOnly="True" VerticalAlignment="Center"/>
+                                        <Button x:Name="BtnBindPrevPreset" Grid.Column="2" Content="🔴 点击绑定" Background="#3A3A3C" Foreground="#EBEBF5" BorderBrush="Transparent" Width="90" Height="30" Click="BtnBindPrevPreset_Click"/>
+                                    </Grid>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="120"/><ColumnDefinition Width="160"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                        <TextBlock Text="下一个方案" VerticalAlignment="Center"/>
+                                        <TextBox x:Name="TxtNextPresetKey" Grid.Column="1" Width="150" IsReadOnly="True" VerticalAlignment="Center"/>
+                                        <Button x:Name="BtnBindNextPreset" Grid.Column="2" Content="🔴 点击绑定" Background="#3A3A3C" Foreground="#EBEBF5" BorderBrush="Transparent" Width="90" Height="30" Click="BtnBindNextPreset_Click"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- 通用设置 -->
+                            <Border Background="#2C2C2E" CornerRadius="12" Padding="20" Margin="0,0,0,14">
+                                <StackPanel>
+                                    <TextBlock Style="{StaticResource HeaderText}" Text="通用"/>
+                                    <CheckBox x:Name="ChkDoubleClickTrayExit"
+                                              Content="双击托盘图标强制退出&#10;(失焦时可用 Tab 导航到托盘，按两下空格退出)"
+                                              Margin="0,4,0,0"/>
+                                    <CheckBox x:Name="ChkDebugLogInput"
+                                              Content="调试日志：输入事件写入 log.txt"
+                                              Margin="0,8,0,0"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+
+                <!-- ═══ 点击方案 Tab ═══ -->
+                <TabItem Header="点击方案">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,0,14">
+                        <StackPanel>
+                            <StackPanel x:Name="ClickPresetPanel"/>
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+
+                <!-- ═══ 钓鱼 Tab ═══ -->
+                <TabItem Header="钓鱼">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,0,14">
+                        <StackPanel>
+                    <Border Background="#2C2C2E" CornerRadius="12" Padding="20" Margin="0,0,0,14">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource HeaderText}" Text="OCR 截图区域"/>
+                            <TextBlock Style="{StaticResource SubText}" Text="屏幕坐标，像素值" Margin="0,-6,0,10"/>
+                            <Grid HorizontalAlignment="Left">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="30"/><ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="20"/>
+                                    <ColumnDefinition Width="30"/><ColumnDefinition Width="100"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="38"/><RowDefinition Height="38"/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Text="X" VerticalAlignment="Center"/>
+                                <TextBox x:Name="TxtCaptureX" Grid.Column="1" Width="90" VerticalAlignment="Center"/>
+                                <TextBlock Text="Y" Grid.Column="3" VerticalAlignment="Center"/>
+                                <TextBox x:Name="TxtCaptureY" Grid.Column="4" Width="90" VerticalAlignment="Center"/>
+                                <TextBlock Text="宽" Grid.Row="1" VerticalAlignment="Center"/>
+                                <TextBox x:Name="TxtCaptureW" Grid.Row="1" Grid.Column="1" Width="90" VerticalAlignment="Center"/>
+                                <TextBlock Text="高" Grid.Row="1" Grid.Column="3" VerticalAlignment="Center"/>
+                                <TextBox x:Name="TxtCaptureH" Grid.Row="1" Grid.Column="4" Width="90" VerticalAlignment="Center"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                    <Border Background="#2C2C2E" CornerRadius="12" Padding="20" Margin="0,0,0,14">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource HeaderText}" Text="检测"/>
+                            <TextBlock Text="轮询间隔" Margin="0,0,0,6"/>
+                            <StackPanel Margin="0,0,0,6">
+                                <RadioButton x:Name="Rb250" GroupName="Polling" Content="250ms - 低开销 4Hz"/>
+                                <RadioButton x:Name="Rb200" GroupName="Polling" Content="200ms — 默认 5Hz"/>
+                                <RadioButton x:Name="Rb125" GroupName="Polling" Content="125ms - 略高开销 8Hz"/>
+                                <RadioButton x:Name="Rb100" GroupName="Polling" Content="100ms - 高开销 10Hz"/>
+                            </StackPanel>
+                            <CheckBox x:Name="ChkAutoFish" Content="启用自动钓鱼"/>
+                            <CheckBox x:Name="ChkDebugLog" Content="调试日志：OCR 写入 log.txt"/>
+                            <CheckBox x:Name="ChkDebugOverlay" Content="实时调试：显示 OCR 文字"/>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                <TextBlock Text="模糊匹配阈值" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBox x:Name="TxtFuzzyThreshold" Width="50" Height="26"
+                                         VerticalAlignment="Center"/>
+                                <TextBlock Text="(关键词模糊匹配阈值 0.30–1.00，越低越宽松，默认： 0.75)"
+                                           Style="{StaticResource SubText}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                    <Border Background="#2C2C2E" CornerRadius="12" Padding="20" Margin="0,0,0,14">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource HeaderText}" Text="识别短语"/>
+                            <TextBlock Style="{StaticResource SubText}" Text="逗号分隔多个短语" Margin="0,-6,0,8"/>
+                            <TextBlock Text="抛竿短语" Margin="0,0,0,4"/>
+                            <TextBox x:Name="TxtCastPhrases" Height="40" TextWrapping="Wrap" Margin="0,0,0,10"/>
+                            <TextBlock Text="咬钩短语" Margin="0,0,0,4"/>
+                            <TextBox x:Name="TxtBitePhrases" Height="40" TextWrapping="Wrap" Margin="0,0,0,10"/>
+                            <TextBlock Text="收回短语" Margin="0,0,0,4"/>
+                            <TextBox x:Name="TxtReelPhrases" Height="40" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Background="#2C2C2E" CornerRadius="12" Padding="20" Margin="0,0,0,14">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource HeaderText}" Text="延迟设置 (ms)"/>
+                            <Grid HorizontalAlignment="Left" Margin="0,4,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="110"/><ColumnDefinition Width="80"/><ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="38"/><RowDefinition Height="38"/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Text="抛竿后冷却" VerticalAlignment="Center"/>
+                                <TextBox x:Name="TxtCastCooldown" Grid.Column="1" Width="70" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="2" Style="{StaticResource SubText}" Text="抛竿后此时间内不检测咬钩，防止文字未消失导致连点收杆抛竿" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                <TextBlock Text="收回后重抛" Grid.Row="1" VerticalAlignment="Center"/>
+                                <TextBox x:Name="TxtRecastDelay" Grid.Row="1" Grid.Column="1" Width="70" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Row="1" Grid.Column="2" Style="{StaticResource SubText}" Text="检测到收回后等待此时间，自动右键抛竿" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                    <Border Background="#2C2C2E" CornerRadius="12" Padding="20" Margin="0,0,0,14">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource HeaderText}" Text="自动切换鱼竿"/>
+                            <CheckBox x:Name="ChkAutoSwitchRod" Content="启用自动切换鱼竿" Margin="0,0,0,10"/>
+
+                            <TextBlock Text="启用鱼竿槽位" Style="{StaticResource SubText}" Margin="0,0,0,8"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,14">
+                                <CheckBox x:Name="ChkRod1" Content="1" Margin="2,0"/>
+                                <CheckBox x:Name="ChkRod2" Content="2" Margin="2,0"/>
+                                <CheckBox x:Name="ChkRod3" Content="3" Margin="2,0"/>
+                                <CheckBox x:Name="ChkRod4" Content="4" Margin="2,0"/>
+                                <CheckBox x:Name="ChkRod5" Content="5" Margin="2,0"/>
+                                <CheckBox x:Name="ChkRod6" Content="6" Margin="2,0"/>
+                                <CheckBox x:Name="ChkRod7" Content="7" Margin="2,0"/>
+                                <CheckBox x:Name="ChkRod8" Content="8" Margin="2,0"/>
+                                <CheckBox x:Name="ChkRod9" Content="9" Margin="2,0"/>
+                            </StackPanel>
+
+                            <Grid HorizontalAlignment="Left" Margin="0,4,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="110"/><ColumnDefinition Width="80"/><ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="38"/><RowDefinition Height="38"/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Text="切杆延迟 (ms)" VerticalAlignment="Center"/>
+                                <TextBox x:Name="TxtSwitchRodDelay" Grid.Column="1" Width="70" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="2" Style="{StaticResource SubText}" Text="识别到损坏后，等待此时间再按数字键切杆" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                <TextBlock Text="切杆重抛 (ms)" Grid.Row="1" VerticalAlignment="Center"/>
+                                <TextBox x:Name="TxtSwitchRodRecast" Grid.Row="1" Grid.Column="1" Width="70" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Row="1" Grid.Column="2" Style="{StaticResource SubText}" Text="按下数字键后等待此时间，再右键抛竿" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                    <Border Background="#2C2C2E" CornerRadius="12" Padding="20" Margin="0,0,0,14">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource HeaderText}" Text="损坏识别短语"/>
+                            <TextBlock Style="{StaticResource SubText}" Text="逗号分隔多个短语" Margin="0,-6,0,8"/>
+                            <TextBox x:Name="TxtBrokenPhrases" Height="40" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+            </TabControl>
+
+            <Border Grid.Row="2" Background="#2C2C2E" CornerRadius="0,0,16,16" Padding="20,14">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button x:Name="BtnCancel" Content="取消"
+                            Background="Transparent" Foreground="#98989D" BorderBrush="#48484A"
+                            Width="80" Height="40" Margin="0,0,10,0" Click="BtnCancel_Click"/>
+                    <Button x:Name="BtnSave" Content="保存"
+                            Background="#0A84FF" Foreground="#FFFFFF" BorderBrush="Transparent"
+                            Width="80" Height="40" Click="BtnSave_Click"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

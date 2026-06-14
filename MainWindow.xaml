@@ -1,0 +1,68 @@
+<Window x:Class="MC_Helper.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        Topmost="True"
+        ShowInTaskbar="False"
+        ResizeMode="NoResize"
+        SizeToContent="WidthAndHeight"
+        Title="MC_Helper"
+        MouseLeftButtonDown="Window_Drag">
+
+    <Border Background="#CC1C1C1E"
+            CornerRadius="12"
+            Padding="10,5"
+            BorderBrush="#3A3A3C"
+            BorderThickness="1">
+        <Border.Effect>
+            <DropShadowEffect Color="#000000" BlurRadius="20" ShadowDepth="0" Opacity="0.5"/>
+        </Border.Effect>
+
+        <Grid Height="24">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock x:Name="ModeLabel" Grid.Column="0" Text="MC_Helper"
+                       Foreground="#EBEBF5" FontSize="12" FontWeight="SemiBold"
+                       FontFamily="Segoe UI" VerticalAlignment="Center"
+                       Margin="2,0,8,0"/>
+
+            <ContentControl x:Name="ModeContent" Grid.Column="1"
+                            Visibility="Collapsed" VerticalAlignment="Center"/>
+
+            <Button x:Name="BtnSettings" Grid.Column="3" Content="⚙"
+                    Width="24" Height="22" FontSize="12" FontFamily="Segoe UI"
+                    Click="BtnSettings_Click" Cursor="Hand">
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Setter Property="Background" Value="Transparent"/>
+                        <Setter Property="Foreground" Value="#98989D"/>
+                        <Setter Property="BorderBrush" Value="Transparent"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}"
+                                            CornerRadius="4" Padding="3,1">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#3A3A3C"/>
+                                <Setter Property="Foreground" Value="#EBEBF5"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+        </Grid>
+    </Border>
+</Window>
