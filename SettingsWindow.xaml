@@ -168,7 +168,7 @@
                                 <StackPanel>
                                     <TextBlock Style="{StaticResource HeaderText}" Text="Debug 设置"/>
                                     <CheckBox x:Name="ChkDoubleClickTrayExit"
-                                              Content="双击托盘图标强制退出&#10;(失焦时可用 Tab 导航到托盘，按两下空格退出)"
+                                              Content="双击托盘图标强制退出"
                                               Margin="0,4,0,0"/>
                                     <CheckBox x:Name="ChkDebugLogInput"
                                               Content="调试日志：输入事件写入 log.txt"

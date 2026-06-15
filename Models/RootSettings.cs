@@ -9,6 +9,6 @@ public class RootSettings
     public ClickToolSettings Click { get; set; } = new();
     public FishingSettings Fishing { get; set; } = new();
 
-    /// <summary>双击托盘图标强制退出（失焦时可键盘导航到托盘按两下空格退出）</summary>
+    /// <summary>双击托盘图标强制退出</summary>
     public bool DoubleClickTrayToExit { get; set; } = true;
 }
