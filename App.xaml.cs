@@ -71,8 +71,12 @@ public partial class App : Application
 
             CreateTray();
 
-            _mainWindow!.Left = SystemParameters.PrimaryScreenWidth - 270;
-            _mainWindow.Top = 20;
+            _mainWindow!.Top = 20;
+            // 等窗口渲染完成后贴右侧边缘
+            _mainWindow.Loaded += (_, _) =>
+            {
+                _mainWindow.Left = SystemParameters.PrimaryScreenWidth - _mainWindow.ActualWidth;
+            };
             _mainWindow.Show();
             if (_modeManager!.CurrentMode == ToolMode.Fishing)
                 _fishingOverlay!.ShowOverlay();

@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Threading;
 using MC_Helper.Models;
 using MC_Helper.Panels;
 using MC_Helper.Services;
@@ -16,6 +17,9 @@ public partial class MainWindow : Window
 
     private ClickToolPanel? _clickPanel;
     private UserControl? _fishingPanel;
+
+    // 边缘吸附状态追踪
+    private bool _snappedLeft, _snappedRight, _snappedTop, _snappedBottom;
 
     /// <summary>设置窗口打开时暂停全局快捷键分发</summary>
     public bool SuppressGlobalKeys { get; set; }
@@ -131,7 +135,27 @@ public partial class MainWindow : Window
                     ModeContent.Content = _fishingPanel;
                     break;
             }
+
+            // 面板宽度变化后重新贴边
+            Dispatcher.BeginInvoke(DispatcherPriority.Loaded, ReSnapAfterResize);
         });
+    }
+
+    /// <summary>面板尺寸变化后，按之前吸附的边重新贴过去</summary>
+    private void ReSnapAfterResize()
+    {
+        double screenW = SystemParameters.PrimaryScreenWidth;
+        double screenH = SystemParameters.PrimaryScreenHeight;
+
+        if (_snappedRight)
+            Left = screenW - ActualWidth;
+        else if (_snappedLeft)
+            Left = 0;
+
+        if (_snappedBottom)
+            Top = screenH - ActualHeight;
+        else if (_snappedTop)
+            Top = 0;
     }
 
     private void OnRunningChanged(bool running)
@@ -146,7 +170,33 @@ public partial class MainWindow : Window
 
     private void Window_Drag(object sender, MouseButtonEventArgs e)
     {
-        if (e.LeftButton == MouseButtonState.Pressed) DragMove();
+        if (e.LeftButton != MouseButtonState.Pressed) return;
+
+        DragMove();
+        SnapToEdge();
+    }
+
+    /// <summary>边缘吸附：任意一边距屏幕边缘 ≤20px 就贴过去</summary>
+    private void SnapToEdge()
+    {
+        const double snapMargin = 20;
+        double screenW = SystemParameters.PrimaryScreenWidth;
+        double screenH = SystemParameters.PrimaryScreenHeight;
+
+        _snappedLeft = Math.Abs(Left) <= snapMargin;
+        _snappedRight = Math.Abs(screenW - Left - ActualWidth) <= snapMargin;
+        _snappedTop = Math.Abs(Top) <= snapMargin;
+        _snappedBottom = Math.Abs(screenH - Top - ActualHeight) <= snapMargin;
+
+        if (_snappedLeft)
+            Left = 0;
+        else if (_snappedRight)
+            Left = screenW - ActualWidth;
+
+        if (_snappedTop)
+            Top = 0;
+        else if (_snappedBottom)
+            Top = screenH - ActualHeight;
     }
 
     private void BtnSettings_Click(object sender, RoutedEventArgs e) { }

@@ -12,11 +12,9 @@
         </Ellipse>
         <TextBlock x:Name="StatusLabel" Text="未启动"
                    Foreground="#98989D" FontSize="11" FontFamily="Segoe UI"
-                   VerticalAlignment="Center" Margin="0,0,8,0"/>
+                   VerticalAlignment="Center" Margin="0,0,13,0"/>
 
-        <TextBlock Text="方案:" Foreground="#98989D" FontSize="11"
-                   FontFamily="Segoe UI" VerticalAlignment="Center" Margin="0,0,4,0"/>
-        <ComboBox x:Name="PresetCombo" Width="120" Height="20"
+        <ComboBox x:Name="PresetCombo" Height="20" MinWidth="40"
                   FontSize="10" FontFamily="Segoe UI"
                   Foreground="#EBEBF5" Background="#3A3A3C" BorderBrush="#48484A"
                   SelectionChanged="PresetCombo_SelectionChanged">
@@ -25,7 +23,7 @@
                     <Border Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="1" CornerRadius="4"
-                            Padding="6,2">
+                            Padding="3,2">
                         <Grid>
                             <TextBlock x:Name="DisplayText"
                                        Text="{TemplateBinding Text}"

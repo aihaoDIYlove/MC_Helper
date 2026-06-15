@@ -35,7 +35,7 @@ public partial class ClickToolPanel : UserControl
         if (_settings == null) return;
         PresetCombo.Items.Clear();
         foreach (var p in _settings.Presets)
-            PresetCombo.Items.Add($"{p.Name}  [{p.Summary}]");
+            PresetCombo.Items.Add(p.Name);
         if (_settings.Presets.Count > 0)
             PresetCombo.SelectedIndex = Math.Min(_settings.ActivePresetIndex, _settings.Presets.Count - 1);
     }
@@ -64,7 +64,7 @@ public partial class ClickToolPanel : UserControl
         if (running)
         {
             StatusDot.Fill = new SolidColorBrush(Color.FromArgb(0xFF, 0x30, 0xD1, 0x58));
-            StatusLabel.Text = $"● {_settings?.ActivePreset.Name ?? ""}";
+            StatusLabel.Text = _settings?.ActivePreset.Name ?? "";
             StatusLabel.Foreground = new SolidColorBrush(Color.FromArgb(0xFF, 0x30, 0xD1, 0x58));
         }
         else

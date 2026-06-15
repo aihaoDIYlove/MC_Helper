@@ -129,8 +129,8 @@ public class ModeManager
 
     public static string GetModeName(ToolMode mode) => mode switch
     {
-        ToolMode.Click => "🖱 点击模式",
-        ToolMode.Fishing => "🎣 钓鱼",
+        ToolMode.Click => "点击",
+        ToolMode.Fishing => "钓鱼",
         _ => "未知"
     };
 }
