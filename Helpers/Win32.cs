@@ -201,4 +201,172 @@ public static class Win32
     /// <summary>物理像素屏幕宽高（不受 DPI 缩放影响，与 CopyFromScreen 一致）</summary>
     public static int PhysicalScreenWidth => GetSystemMetrics(SM_CXSCREEN);
     public static int PhysicalScreenHeight => GetSystemMetrics(SM_CYSCREEN);
+
+    // ══════════════════════════════════════════════
+    //  DWM 窗口特效 API（亚克力/Mica 背景模糊 + 圆角）
+    // ══════════════════════════════════════════════
+
+    // ── DWM 窗口属性枚举 ─────────────────────────
+
+    /// <summary>DWMWINDOWATTRIBUTE — 用于 DwmSetWindowAttribute</summary>
+    public const int DWMWA_NCRENDERING_ENABLED = 1;
+    public const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;          // Win10 20H1+
+    public const int DWMWA_SYSTEMBACKDROP_TYPE = 38;              // Win11 22621+
+    public const int DWMWA_WINDOW_CORNER_PREFERENCE = 33;         // Win11
+
+    /// <summary>DWM_SYSTEMBACKDROP_TYPE — Mica/Acrylic 背景类型</summary>
+    public const int DWMSBT_AUTO = 0;           // 系统默认
+    public const int DWMSBT_NONE = 1;           // 无效果
+    public const int DWMSBT_MAINWINDOW = 2;     // Mica（云母）
+    public const int DWMSBT_TRANSIENTWINDOW = 3; // Acrylic（亚克力）
+    public const int DWMSBT_TABBEDWINDOW = 4;   // Mica Alt
+
+    /// <summary>DWM_WINDOW_CORNER_PREFERENCE</summary>
+    public const int DWMWCP_DEFAULT = 0;
+    public const int DWMWCP_DONOTROUND = 1;
+    public const int DWMWCP_ROUND = 2;
+    public const int DWMWCP_ROUNDSMALL = 3;
+
+    // ── DWM 模糊结构体 ───────────────────────────
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct MARGINS
+    {
+        public int cxLeftWidth;
+        public int cxRightWidth;
+        public int cyTopHeight;
+        public int cyBottomHeight;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct DWM_BLURBEHIND
+    {
+        public uint dwFlags;
+        [MarshalAs(UnmanagedType.Bool)] public bool fEnable;
+        public IntPtr hRgnBlur;
+        [MarshalAs(UnmanagedType.Bool)] public bool fTransitionOnMaximized;
+    }
+
+    public const uint DWM_BB_ENABLE = 0x00000001;
+    public const uint DWM_BB_BLURREGION = 0x00000002;
+    public const uint DWM_BB_TRANSITIONONMAXIMIZED = 0x00000004;
+
+    // ── Win10 SetWindowCompositionAttribute（私有 API，亚克力回退） ──
+
+    public const int ACCENT_ENABLE_BLURBEHIND = 3;
+    public const int ACCENT_ENABLE_ACRYLICBLURBEHIND = 4;
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct ACCENTPOLICY
+    {
+        public int AccentState;
+        public int AccentFlags;
+        public int GradientColor;
+        public int AnimationId;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct WINCOMPATTRDATA
+    {
+        public int Attribute;       // WCA_ACCENT_POLICY = 19
+        public IntPtr Data;
+        public int DataSize;
+    }
+
+    // ── DWM API 声明 ─────────────────────────────
+
+    [DllImport("dwmapi.dll", PreserveSig = true)]
+    public static extern int DwmSetWindowAttribute(IntPtr hwnd, int dwAttribute,
+        ref int pvAttribute, int cbAttribute);
+
+    [DllImport("dwmapi.dll", PreserveSig = true)]
+    public static extern int DwmExtendFrameIntoClientArea(IntPtr hWnd, ref MARGINS pMarInset);
+
+    [DllImport("dwmapi.dll", PreserveSig = false)]
+    public static extern void DwmEnableBlurBehindWindow(IntPtr hWnd, ref DWM_BLURBEHIND pBlurBehind);
+
+    [DllImport("dwmapi.dll")]
+    public static extern int DwmIsCompositionEnabledNative(
+        [MarshalAs(UnmanagedType.Bool)] out bool pfEnabled);
+
+    /// <summary>检查 DWM 合成是否启用（修正 P/Invoke 签名）</summary>
+    public static bool DwmIsCompositionEnabled()
+    {
+        int hr = DwmIsCompositionEnabledNative(out bool enabled);
+        return hr == 0 && enabled;
+    }
+
+    [DllImport("user32.dll", SetLastError = true)]
+    public static extern bool SetWindowCompositionAttribute(IntPtr hwnd,
+        ref WINCOMPATTRDATA data);
+
+    /// <summary>
+    /// 尝试为窗口启用最佳背景特效：
+    /// Win11  → Mica/Acrylic (DWMWA_SYSTEMBACKDROP_TYPE)
+    /// Win10  → AcrylicBlurBehind (SetWindowCompositionAttribute)
+    ///         回退 → BlurBehind (DwmEnableBlurBehindWindow)
+    /// 同时启用 Win11 系统圆角。
+    /// </summary>
+    public static void ApplyWindowBackdrop(IntPtr hwnd)
+    {
+        if (!DwmIsCompositionEnabled()) return;
+
+        // ① Win11 圆角
+        int corner = DWMWCP_ROUND;
+        DwmSetWindowAttribute(hwnd, DWMWA_WINDOW_CORNER_PREFERENCE,
+            ref corner, sizeof(int));
+
+        // ② Win11 Mica/Acrylic
+        int backdrop = DWMSBT_MAINWINDOW; // Mica — 半透明云母效果
+        int hr = DwmSetWindowAttribute(hwnd, DWMWA_SYSTEMBACKDROP_TYPE,
+            ref backdrop, sizeof(int));
+        if (hr == 0) return; // 成功 → 完成
+
+        // ③ Win10 回退：Acrylic
+        var accent = new ACCENTPOLICY
+        {
+            AccentState = ACCENT_ENABLE_ACRYLICBLURBEHIND,
+            AccentFlags = 2,     // 绘制所有边框
+            GradientColor = unchecked((int)0x99282929)  // ABGR: #282929 @ 60% alpha
+        };
+        var dataSize = Marshal.SizeOf(accent);
+        var accentPtr = Marshal.AllocHGlobal(dataSize);
+        try
+        {
+            Marshal.StructureToPtr(accent, accentPtr, false);
+            var data = new WINCOMPATTRDATA
+            {
+                Attribute = 19, // WCA_ACCENT_POLICY
+                Data = accentPtr,
+                DataSize = dataSize
+            };
+            if (SetWindowCompositionAttribute(hwnd, ref data)) return;
+        }
+        finally { Marshal.FreeHGlobal(accentPtr); }
+
+        // ④ Win10 回退：经典 BlurBehind（Gaussian 模糊）
+        var bb = new DWM_BLURBEHIND
+        {
+            dwFlags = DWM_BB_ENABLE,
+            fEnable = true,
+            hRgnBlur = IntPtr.Zero,
+            fTransitionOnMaximized = false
+        };
+        DwmEnableBlurBehindWindow(hwnd, ref bb);
+
+        // ⑤ 扩展玻璃边框到整个客户区
+        var margins = new MARGINS { cxLeftWidth = -1, cxRightWidth = -1,
+            cyTopHeight = -1, cyBottomHeight = -1 };
+        DwmExtendFrameIntoClientArea(hwnd, ref margins);
+    }
+
+    /// <summary>检查当前系统是否支持 Mica 背景（Win11 22621+）</summary>
+    public static bool IsMicaSupported
+    {
+        get
+        {
+            var os = Environment.OSVersion;
+            return os.Platform == PlatformID.Win32NT && os.Version.Build >= 22621;
+        }
+    }
 }

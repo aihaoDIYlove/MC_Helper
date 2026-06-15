@@ -10,8 +10,135 @@
         Topmost="True"
         Background="Transparent">
 
-    <Border CornerRadius="14" Background="#E81C1C1E"
-            BorderBrush="#3A3A3C" BorderThickness="1" Margin="4">
+    <Window.Resources>
+        <!-- 颜色（与 SettingsWindow 统一） -->
+        <SolidColorBrush x:Key="WindowBg" Color="#282929"/>
+        <SolidColorBrush x:Key="CardBg" Color="#2C2C2E"/>
+        <SolidColorBrush x:Key="TextLight" Color="#EDF2F2"/>
+        <SolidColorBrush x:Key="TextMuted" Color="#C7C7CC"/>
+        <SolidColorBrush x:Key="TextHint" Color="#98989D"/>
+        <SolidColorBrush x:Key="Accent" Color="#3B82F6"/>
+        <SolidColorBrush x:Key="AccentHover" Color="#60A5FA"/>
+        <FontFamily x:Key="UIFont">Segoe UI</FontFamily>
+
+        <!-- 设置行标签 -->
+        <Style x:Key="SettingLabel" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource UIFont}"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Foreground" Value="#C7C7CC"/>
+            <Setter Property="Margin" Value="0,0,0,4"/>
+        </Style>
+
+        <!-- macOS 凹陷文本框 -->
+        <Style x:Key="CardTextBox" TargetType="TextBox">
+            <Setter Property="FontFamily" Value="{StaticResource UIFont}"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Foreground" Value="#EDF2F2"/>
+            <Setter Property="CaretBrush" Value="{StaticResource Accent}"/>
+            <Setter Property="Padding" Value="10,7"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border x:Name="OuterBorder"
+                                Background="#1A1A1C"
+                                BorderBrush="#3A3A3C"
+                                BorderThickness="1"
+                                CornerRadius="6"
+                                SnapsToDevicePixels="True">
+                            <ScrollViewer x:Name="PART_ContentHost"
+                                          Padding="{TemplateBinding Padding}"
+                                          VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter TargetName="OuterBorder"
+                                        Property="BorderBrush" Value="{StaticResource Accent}"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="OuterBorder"
+                                        Property="BorderBrush" Value="#5A5A5D"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- RadioButton -->
+        <Style x:Key="FlatRadio" TargetType="RadioButton">
+            <Setter Property="FontFamily" Value="{StaticResource UIFont}"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Foreground" Value="#C7C7CC"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Margin" Value="0,2,20,2"/>
+        </Style>
+
+        <!-- 主按钮 -->
+        <Style x:Key="PrimaryButton" TargetType="Button">
+            <Setter Property="FontFamily" Value="{StaticResource UIFont}"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="Background" Value="{StaticResource Accent}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="20,8"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="6"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="{StaticResource AccentHover}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#2563EB"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 次按钮 -->
+        <Style x:Key="SecondaryButton" TargetType="Button">
+            <Setter Property="FontFamily" Value="{StaticResource UIFont}"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Foreground" Value="#EDF2F2"/>
+            <Setter Property="Background" Value="#4A4A4D"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="20,8"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="6"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#5A5A5D"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <!-- ═══ 窗口外框 ════════════════════════ -->
+    <Border CornerRadius="12"
+            Background="{StaticResource WindowBg}"
+            BorderBrush="#3A3A3C" BorderThickness="1"
+            Margin="4" ClipToBounds="True">
         <Border.Effect>
             <DropShadowEffect Color="#000000" BlurRadius="30" ShadowDepth="0" Opacity="0.6"/>
         </Border.Effect>
@@ -23,79 +150,85 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <Border Grid.Row="0" Background="#2C2C2E" CornerRadius="14,14,0,0"
-                    Padding="16,12" MouseLeftButtonDown="TitleBar_Drag">
+            <!-- 标题栏 -->
+            <Border Grid.Row="0" Background="{StaticResource CardBg}"
+                    CornerRadius="12,12,0,0" Padding="16,10"
+                    MouseLeftButtonDown="TitleBar_Drag">
                 <TextBlock x:Name="TitleLabel" Text="编辑方案"
-                           FontSize="15" FontWeight="SemiBold" Foreground="#FFFFFF"/>
+                           FontFamily="{StaticResource UIFont}"
+                           FontSize="13" FontWeight="SemiBold"
+                           Foreground="{StaticResource TextLight}"/>
             </Border>
 
-            <StackPanel Grid.Row="1" Margin="20,14,20,0">
-                <TextBlock Text="方案名称" Foreground="#EBEBF5" FontSize="13"
-                           FontFamily="Segoe UI" Margin="0,0,0,4"/>
-                <TextBox x:Name="TxtName" Height="32" Margin="0,0,0,14"
-                         Background="#2C2C2E" Foreground="#EBEBF5"
-                         BorderBrush="#48484A" BorderThickness="1"
-                         FontFamily="Segoe UI" FontSize="13" Padding="8,4"/>
+            <!-- 内容 -->
+            <StackPanel Grid.Row="1" Margin="20,16,20,0">
+                <TextBlock Text="方案名称" Style="{StaticResource SettingLabel}"/>
+                <TextBox x:Name="TxtName"
+                         Style="{StaticResource CardTextBox}"
+                         Margin="0,0,0,14"/>
 
-                <TextBlock Text="鼠标按键" Foreground="#EBEBF5" FontSize="13"
-                           FontFamily="Segoe UI" Margin="0,0,0,4"/>
+                <TextBlock Text="鼠标按键" Style="{StaticResource SettingLabel}"/>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
-                    <RadioButton x:Name="RbLeft" Content="左键" GroupName="Button"
-                                 Foreground="#EBEBF5" FontSize="13" Margin="0,0,20,0"/>
-                    <RadioButton x:Name="RbRight" Content="右键" GroupName="Button"
-                                 Foreground="#EBEBF5" FontSize="13"/>
+                    <RadioButton x:Name="RbLeft" Content="左键"
+                                 GroupName="Button" Style="{StaticResource FlatRadio}"/>
+                    <RadioButton x:Name="RbRight" Content="右键"
+                                 GroupName="Button" Style="{StaticResource FlatRadio}"/>
                 </StackPanel>
 
-                <TextBlock Text="点击行为" Foreground="#EBEBF5" FontSize="13"
-                           FontFamily="Segoe UI" Margin="0,0,0,4"/>
+                <TextBlock Text="点击行为" Style="{StaticResource SettingLabel}"/>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
-                    <RadioButton x:Name="RbRapid" Content="连点" GroupName="Behavior"
-                                 Foreground="#EBEBF5" FontSize="13" Margin="0,0,20,0"
+                    <RadioButton x:Name="RbRapid" Content="连点"
+                                 GroupName="Behavior" Style="{StaticResource FlatRadio}"
                                  Checked="OnBehaviorChanged"/>
-                    <RadioButton x:Name="RbHold" Content="长按" GroupName="Behavior"
-                                 Foreground="#EBEBF5" FontSize="13"
+                    <RadioButton x:Name="RbHold" Content="长按"
+                                 GroupName="Behavior" Style="{StaticResource FlatRadio}"
                                  Checked="OnBehaviorChanged"/>
                 </StackPanel>
 
-                <TextBlock Text="快捷键行为" Foreground="#EBEBF5" FontSize="13"
-                           FontFamily="Segoe UI" Margin="0,0,0,4"/>
+                <TextBlock Text="快捷键行为" Style="{StaticResource SettingLabel}"/>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
-                    <RadioButton x:Name="RbTrigToggle" Content="开关" GroupName="TriggerMode"
-                                 Foreground="#EBEBF5" FontSize="13" Margin="0,0,20,0"/>
-                    <RadioButton x:Name="RbTrigHold" Content="按住启用" GroupName="TriggerMode"
-                                 Foreground="#EBEBF5" FontSize="13"/>
+                    <RadioButton x:Name="RbTrigToggle" Content="开关"
+                                 GroupName="TriggerMode" Style="{StaticResource FlatRadio}"/>
+                    <RadioButton x:Name="RbTrigHold" Content="按住启用"
+                                 GroupName="TriggerMode" Style="{StaticResource FlatRadio}"/>
                 </StackPanel>
 
-                <Grid x:Name="RapidSettings">
+                <Grid x:Name="RapidSettings" Margin="0,0,0,14">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     <StackPanel>
-                        <TextBlock Text="连点间隔 (ms)" Foreground="#98989D" FontSize="11" Margin="0,0,0,2"/>
-                        <TextBox x:Name="TxtIntervalMs" Width="100" Height="30"
-                                 Background="#2C2C2E" Foreground="#EBEBF5"
-                                 BorderBrush="#48484A" BorderThickness="1"
-                                 FontFamily="Segoe UI" FontSize="13" Padding="8,4"/>
+                        <TextBlock Text="连点间隔 (ms)"
+                                   FontFamily="{StaticResource UIFont}"
+                                   FontSize="11" Foreground="{StaticResource TextHint}"
+                                   Margin="0,0,0,2"/>
+                        <TextBox x:Name="TxtIntervalMs" Width="120"
+                                 Style="{StaticResource CardTextBox}"/>
                     </StackPanel>
                     <StackPanel Grid.Column="1">
-                        <TextBlock Text="按下持续 (ms)" Foreground="#98989D" FontSize="11" Margin="0,0,0,2"/>
-                        <TextBox x:Name="TxtHoldMs" Width="100" Height="30"
-                                 Background="#2C2C2E" Foreground="#EBEBF5"
-                                 BorderBrush="#48484A" BorderThickness="1"
-                                 FontFamily="Segoe UI" FontSize="13" Padding="8,4"/>
+                        <TextBlock Text="按下持续 (ms)"
+                                   FontFamily="{StaticResource UIFont}"
+                                   FontSize="11" Foreground="{StaticResource TextHint}"
+                                   Margin="0,0,0,2"/>
+                        <TextBox x:Name="TxtHoldMs" Width="120"
+                                 Style="{StaticResource CardTextBox}"/>
                     </StackPanel>
                 </Grid>
             </StackPanel>
 
-            <Border Grid.Row="2" Background="#2C2C2E" CornerRadius="0,0,14,14" Padding="16,12">
+            <!-- 按钮栏 -->
+            <Border Grid.Row="2" Background="{StaticResource CardBg}"
+                    CornerRadius="0,0,12,12" Padding="16,12">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button Content="取消"
-                            Background="Transparent" Foreground="#98989D" BorderBrush="#48484A"
-                            Width="70" Height="36" Margin="0,0,10,0" Click="BtnCancel_Click"/>
+                            Style="{StaticResource SecondaryButton}"
+                            Width="70" Height="36"
+                            Margin="0,0,8,0" Click="BtnCancel_Click"/>
                     <Button Content="确定"
-                            Background="#0A84FF" Foreground="#FFFFFF" BorderBrush="Transparent"
-                            Width="70" Height="36" Click="BtnOk_Click"/>
+                            Style="{StaticResource PrimaryButton}"
+                            Width="70" Height="36"
+                            Click="BtnOk_Click"/>
                 </StackPanel>
             </Border>
         </Grid>

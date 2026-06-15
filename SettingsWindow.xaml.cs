@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -25,10 +26,52 @@ public partial class SettingsWindow : Window
         _settingsService = settingsService;
         _onSaved = onSaved;
 
-        Loaded += (_, _) => LoadAllSettings();
+        // DWM backdrop 在 SourceInitialized 事件中初始化（此时 HWND 已存在）
+        SourceInitialized += (_, _) =>
+        {
+            try
+            {
+                var hwnd = new System.Windows.Interop.WindowInteropHelper(this).Handle;
+                if (hwnd != IntPtr.Zero)
+                {
+                    Win32.ApplyWindowBackdrop(hwnd);
+                    // Win10 沉浸式暗模式标题栏
+                    int darkMode = 1;
+                    Win32.DwmSetWindowAttribute(hwnd, Win32.DWMWA_USE_IMMERSIVE_DARK_MODE,
+                        ref darkMode, Marshal.SizeOf<int>());
+                }
+            }
+            catch
+            {
+                // DWM 特效失败不影响窗口功能，静默回退
+            }
+        };
+
+        Loaded += (_, _) =>
+        {
+            // 初始化侧边栏选中第一项
+            SidebarList.SelectedIndex = 0;
+            LoadAllSettings();
+        };
+
         KeyDown += OnGlobalKeyDown;
         MouseDown += OnGlobalMouseDown;
     }
+
+    // ── 侧边栏导航 ───────────────────────────────
+
+    private void SidebarList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        // 防护：InitializeComponent 期间这些字段可能尚未连接
+        if (PageGeneral == null || PageClick == null || PageFishing == null) return;
+        if (SidebarList.SelectedIndex < 0) return;
+        var idx = SidebarList.SelectedIndex;
+        PageGeneral.Visibility  = idx == 0 ? Visibility.Visible : Visibility.Collapsed;
+        PageClick.Visibility    = idx == 1 ? Visibility.Visible : Visibility.Collapsed;
+        PageFishing.Visibility  = idx == 2 ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    // ── 设置加载入口 ──────────────────────────────
 
     private void LoadAllSettings()
     {
@@ -80,10 +123,20 @@ public partial class SettingsWindow : Window
 
     private static void SetBindBtn(Button btn, bool active)
     {
-        btn.Content = active ? "等待按键..." : "点击绑定";
-        btn.Background = new SolidColorBrush(active
-            ? Color.FromArgb(0xFF, 0xFF, 0x9F, 0x0A)
-            : Color.FromArgb(0xFF, 0x3A, 0x3A, 0x3C));
+        if (active)
+        {
+            btn.Content = "等待按键...";
+            btn.Background = new SolidColorBrush(Color.FromArgb(0xFF, 0xF5, 0x9E, 0x0B)); // Amber
+            btn.Foreground = new SolidColorBrush(Colors.White);
+            btn.FontWeight = FontWeights.SemiBold;
+        }
+        else
+        {
+            btn.Content = "点击绑定";
+            btn.Background = new SolidColorBrush(Color.FromArgb(0xFF, 0x3B, 0x82, 0xF6)); // Blue
+            btn.Foreground = new SolidColorBrush(Colors.White);
+            btn.FontWeight = FontWeights.SemiBold;
+        }
     }
 
     private void OnGlobalKeyDown(object sender, KeyEventArgs e)
@@ -154,33 +207,47 @@ public partial class SettingsWindow : Window
             var preset = toolSettings.Presets[i];
             var idx = i;
 
-            var border = new Border
+            // use settings-card style
+            var card = new Border
             {
-                Background = new SolidColorBrush(Color.FromArgb(0xFF, 0x2C, 0x2C, 0x2E)),
-                CornerRadius = new CornerRadius(12), Padding = new Thickness(16), Margin = new Thickness(0, 0, 0, 10)
+                Style = (Style)FindResource("SettingsCardStyle"),
+                Padding = new Thickness(12),
+                Margin = new Thickness(0, 0, 0, 16)
             };
+
             var sp = new StackPanel();
 
-            var nameRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 8) };
-            nameRow.Children.Add(new TextBlock
+            // Preset name + summary
+            var headerRow = new Grid { Margin = new Thickness(0, 0, 0, 8) };
+            headerRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(120) });
+            headerRow.ColumnDefinitions.Add(new ColumnDefinition());
+            headerRow.Children.Add(new TextBlock
             {
-                Text = preset.Name, Foreground = new SolidColorBrush(Color.FromArgb(0xFF, 0xEB, 0xEB, 0xF5)),
-                FontSize = 13, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center, Width = 120
+                Text = preset.Name,
+                Foreground = (Brush)FindResource("AppleTextPrimaryBrush"),
+                FontSize = 13,
+                FontWeight = FontWeights.SemiBold,
+                VerticalAlignment = VerticalAlignment.Center
             });
-            nameRow.Children.Add(new TextBlock
+            headerRow.Children.Add(new TextBlock
             {
                 Text = preset.Summary,
-                Foreground = new SolidColorBrush(Color.FromArgb(0xFF, 0x98, 0x98, 0x9D)),
-                FontSize = 11, VerticalAlignment = VerticalAlignment.Center
+                Foreground = (Brush)FindResource("AppleTextSecondaryBrush"),
+                FontSize = 11,
+                VerticalAlignment = VerticalAlignment.Center
             });
-            sp.Children.Add(nameRow);
+            Grid.SetColumn(headerRow.Children[1], 1);
+            sp.Children.Add(headerRow);
 
+            // Edit / Delete buttons
             var btnRow = new StackPanel { Orientation = Orientation.Horizontal };
             var btnEdit = new Button
             {
-                Content = "编辑", Background = new SolidColorBrush(Color.FromArgb(0xFF, 0x3A, 0x3A, 0x3C)),
-                Foreground = new SolidColorBrush(Color.FromArgb(0xFF, 0xEB, 0xEB, 0xF5)),
-                BorderBrush = null, Width = 60, Height = 28, Margin = new Thickness(0, 0, 6, 0)
+                Content = "编辑",
+                Style = (Style)FindResource("AppleSecondaryButtonStyle"),
+                Width = 60,
+                Height = 28,
+                Margin = new Thickness(0, 0, 6, 0)
             };
             btnEdit.Click += (_, _) => EditPreset(toolSettings, idx);
             btnRow.Children.Add(btnEdit);
@@ -189,9 +256,10 @@ public partial class SettingsWindow : Window
             {
                 var btnDel = new Button
                 {
-                    Content = "删除", Background = new SolidColorBrush(Color.FromArgb(0xFF, 0x3A, 0x3A, 0x3C)),
-                    Foreground = new SolidColorBrush(Color.FromArgb(0xFF, 0xFF, 0x45, 0x3A)),
-                    BorderBrush = null, Width = 60, Height = 28
+                    Content = "删除",
+                    Style = (Style)FindResource("AppleDangerButtonStyle"),
+                    Width = 60,
+                    Height = 28
                 };
                 btnDel.Click += (_, _) =>
                 {
@@ -203,24 +271,27 @@ public partial class SettingsWindow : Window
                 btnRow.Children.Add(btnDel);
             }
             sp.Children.Add(btnRow);
-            border.Child = sp;
-            panel.Children.Add(border);
+            card.Child = sp;
+            panel.Children.Add(card);
         }
 
-        // 新建方案按钮
-        var addBorder = new Border
+        // Add new preset button
+        var addCard = new Border
         {
-            Background = new SolidColorBrush(Color.FromArgb(0xFF, 0x2C, 0x2C, 0x2E)),
-            CornerRadius = new CornerRadius(12), Padding = new Thickness(16), Margin = new Thickness(0, 0, 0, 10)
+            Style = (Style)FindResource("SettingsCardStyle"),
+            Padding = new Thickness(12),
+            Margin = new Thickness(0, 0, 0, 16)
         };
         var addBtn = new Button
         {
-            Content = "+ 新建方案", Background = new SolidColorBrush(Color.FromArgb(0xFF, 0x0A, 0x84, 0xFF)),
-            Foreground = new SolidColorBrush(Colors.White), BorderBrush = null, Width = 110, Height = 32
+            Content = "+ 新建方案",
+            Style = (Style)FindResource("ApplePrimaryButtonStyle"),
+            Width = 110,
+            Height = 32
         };
         addBtn.Click += (_, _) => EditPreset(toolSettings, -1);
-        addBorder.Child = addBtn;
-        panel.Children.Add(addBorder);
+        addCard.Child = addBtn;
+        panel.Children.Add(addCard);
     }
 
     private void EditPreset(ClickToolSettings toolSettings, int index)
@@ -229,7 +300,8 @@ public partial class SettingsWindow : Window
         var preset = isNew ? new ClickPreset() : toolSettings.Presets[index].Clone();
         var dlg = new PresetEditDialog(preset, $"点击方案 - {(isNew ? "新建" : "编辑")}")
         {
-            Owner = this, WindowStartupLocation = WindowStartupLocation.CenterOwner
+            Owner = this,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner
         };
         if (dlg.ShowDialog() == true)
         {
@@ -249,15 +321,18 @@ public partial class SettingsWindow : Window
         TxtCaptureW.Text = f.CaptureWidthPercent.ToString("F1");
         TxtCaptureH.Text = f.CaptureHeightPercent.ToString("F1");
         SetPollingRadio(f.PollingIntervalMs);
-        ChkAutoFish.IsChecked = f.AutoFishEnabled; ChkDebugLog.IsChecked = f.DebugLogOcr;
+        ChkAutoFish.IsChecked = f.AutoFishEnabled;
+        ChkDebugLog.IsChecked = f.DebugLogOcr;
         ChkDebugOverlay.IsChecked = f.DebugOverlayEnabled;
         TxtFuzzyThreshold.Text = f.FuzzyMatchThreshold.ToString("F2");
         TxtCastPhrases.Text = string.Join(", ", f.CastPhrases);
         TxtBitePhrases.Text = string.Join(", ", f.BitePhrases);
         TxtReelPhrases.Text = string.Join(", ", f.ReelPhrases);
-        TxtCastCooldown.Text = f.CastCooldownMs.ToString(); TxtRecastDelay.Text = f.RecastDelayMs.ToString();
+        TxtCastCooldown.Text = f.CastCooldownMs.ToString();
+        TxtRecastDelay.Text = f.RecastDelayMs.ToString();
         ChkAutoSwitchRod.IsChecked = f.AutoSwitchRodEnabled;
-        TxtSwitchRodDelay.Text = f.SwitchRodDelayMs.ToString(); TxtSwitchRodRecast.Text = f.SwitchRodRecastMs.ToString();
+        TxtSwitchRodDelay.Text = f.SwitchRodDelayMs.ToString();
+        TxtSwitchRodRecast.Text = f.SwitchRodRecastMs.ToString();
         TxtBrokenPhrases.Text = string.Join(", ", f.BrokenPhrases);
 
         var rods = new[] { ChkRod1, ChkRod2, ChkRod3, ChkRod4, ChkRod5, ChkRod6, ChkRod7, ChkRod8, ChkRod9 };
@@ -273,14 +348,19 @@ public partial class SettingsWindow : Window
         f.CaptureWidthPercent = double.Parse(TxtCaptureW.Text);
         f.CaptureHeightPercent = double.Parse(TxtCaptureH.Text);
         f.PollingIntervalMs = GetPollingValue();
-        f.AutoFishEnabled = ChkAutoFish.IsChecked == true; f.DebugLogOcr = ChkDebugLog.IsChecked == true;
+        f.AutoFishEnabled = ChkAutoFish.IsChecked == true;
+        f.DebugLogOcr = ChkDebugLog.IsChecked == true;
         f.DebugOverlayEnabled = ChkDebugOverlay.IsChecked == true;
-        if (double.TryParse(TxtFuzzyThreshold.Text, out var th)) f.FuzzyMatchThreshold = Math.Clamp(th, 0.10, 1.0);
-        f.CastPhrases = ParsePhrases(TxtCastPhrases.Text); f.BitePhrases = ParsePhrases(TxtBitePhrases.Text);
+        if (double.TryParse(TxtFuzzyThreshold.Text, out var th))
+            f.FuzzyMatchThreshold = Math.Clamp(th, 0.10, 1.0);
+        f.CastPhrases = ParsePhrases(TxtCastPhrases.Text);
+        f.BitePhrases = ParsePhrases(TxtBitePhrases.Text);
         f.ReelPhrases = ParsePhrases(TxtReelPhrases.Text);
-        f.CastCooldownMs = int.Parse(TxtCastCooldown.Text); f.RecastDelayMs = int.Parse(TxtRecastDelay.Text);
+        f.CastCooldownMs = int.Parse(TxtCastCooldown.Text);
+        f.RecastDelayMs = int.Parse(TxtRecastDelay.Text);
         f.AutoSwitchRodEnabled = ChkAutoSwitchRod.IsChecked == true;
-        f.SwitchRodDelayMs = int.Parse(TxtSwitchRodDelay.Text); f.SwitchRodRecastMs = int.Parse(TxtSwitchRodRecast.Text);
+        f.SwitchRodDelayMs = int.Parse(TxtSwitchRodDelay.Text);
+        f.SwitchRodRecastMs = int.Parse(TxtSwitchRodRecast.Text);
         f.BrokenPhrases = ParsePhrases(TxtBrokenPhrases.Text);
 
         var rods = new[] { ChkRod1, ChkRod2, ChkRod3, ChkRod4, ChkRod5, ChkRod6, ChkRod7, ChkRod8, ChkRod9 };
@@ -288,6 +368,8 @@ public partial class SettingsWindow : Window
         for (int i = 0; i < 9; i++)
             f.RodSlots.Add(rods[i].IsChecked == true);
     }
+
+    // ── 保存 / 取消 ──────────────────────────────
 
     private void BtnSave_Click(object sender, RoutedEventArgs e)
     {
@@ -300,13 +382,37 @@ public partial class SettingsWindow : Window
             _onSaved?.Invoke();
             Close();
         }
-        catch (Exception ex) { MessageBox.Show($"保存失败: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error); }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"保存失败: {ex.Message}", "错误",
+                MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
     private void BtnCancel_Click(object sender, RoutedEventArgs e) => Close();
-    private void TitleBar_Drag(object sender, MouseButtonEventArgs e) { if (e.LeftButton == MouseButtonState.Pressed) DragMove(); }
 
-    private void SetPollingRadio(int ms) { (ms switch { 250 => Rb250, 125 => Rb125, 100 => Rb100, _ => Rb200 }).IsChecked = true; }
-    private int GetPollingValue() { if (Rb100.IsChecked == true) return 100; if (Rb125.IsChecked == true) return 125; if (Rb250.IsChecked == true) return 250; return 200; }
-    private static List<string> ParsePhrases(string text) => text.Split(new[] { ',', '，', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()).Where(s => s.Length > 0).ToList();
+    private void TitleBar_Drag(object sender, MouseButtonEventArgs e)
+    {
+        if (e.LeftButton == MouseButtonState.Pressed)
+            DragMove();
+    }
+
+    // ── 轮询 RadioButton 辅助 ────────────────────
+
+    private void SetPollingRadio(int ms)
+    {
+        (ms switch { 250 => Rb250, 125 => Rb125, 100 => Rb100, _ => Rb200 }).IsChecked = true;
+    }
+
+    private int GetPollingValue()
+    {
+        if (Rb100.IsChecked == true) return 100;
+        if (Rb125.IsChecked == true) return 125;
+        if (Rb250.IsChecked == true) return 250;
+        return 200;
+    }
+
+    private static List<string> ParsePhrases(string text) =>
+        text.Split(new[] { ',', '，', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(s => s.Trim()).Where(s => s.Length > 0).ToList();
 }
