@@ -49,6 +49,10 @@ public static class Win32
     public const int XBUTTON1 = 0x0001;
     public const int XBUTTON2 = 0x0002;
 
+    // ── 注入事件标志 ─────────────────────────────
+    /// <summary>MSLLHOOKSTRUCT.flags: 事件由 SendInput/mouse_event 注入</summary>
+    public const int LLMHF_INJECTED = 0x01;
+
     // ── 结构体 ───────────────────────────────────
 
     [StructLayout(LayoutKind.Sequential)]
@@ -131,6 +135,13 @@ public static class Win32
     [DllImport("user32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool UnregisterHotKey(IntPtr hWnd, int id);
+
+    // ── RegisterHotKey 预定义 ID ──────────────────
+    public const int HK_PREV_MODE = 1;
+    public const int HK_NEXT_MODE = 2;
+    public const int HK_QUICK_TOGGLE = 3;
+    public const int HK_PREV_PRESET = 4;
+    public const int HK_NEXT_PRESET = 5;
 
     // ── 低层钩子 API ─────────────────────────────
 

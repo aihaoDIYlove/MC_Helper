@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Threading;
@@ -27,6 +28,14 @@ public partial class App : Application
     private TrayIcon? _trayIcon;
     private HwndSource? _hwndSource;
 
+    /// <summary>全局快捷键是否启用 — 托盘隐藏窗口时关闭，防止误触</summary>
+    private volatile bool _hotkeysEnabled = true;
+
+    /// <summary>RegisterHotKey 注册窗口句柄</summary>
+    private IntPtr _hotkeyHwnd;
+    /// <summary>已注册的热键 ID 列表（用于注销）</summary>
+    private readonly HashSet<int> _registeredHotKeyIds = new();
+
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
@@ -47,7 +56,7 @@ public partial class App : Application
             _settingsService.Load();
             var settings = _settingsService.Settings;
 
-            _inputService = new InputService(50); // 右键持续时间，写死 50ms
+            _inputService = new InputService(50);
             _ocr = new OcrService();
             _rodSwitch = new RodSwitchService(settings.Fishing, _inputService);
 
@@ -59,25 +68,33 @@ public partial class App : Application
             Logger.Info("创建 UI 对象...");
             CreateUIObjects(settings);
 
-            Logger.Info("安装低层钩子...");
-            InstallHooks();
-
             Logger.Info("连线 UI...");
             WireUpUI(settings);
 
-            // 初始同步 debug 日志开关
             _inputService!.DebugLogInput = settings.Fishing.DebugLogInput;
             _clickTool!.DebugLog = settings.Fishing.DebugLogInput;
 
             CreateTray();
 
             _mainWindow!.Top = 20;
-            // 等窗口渲染完成后贴右侧边缘
             _mainWindow.Loaded += (_, _) =>
             {
                 _mainWindow.Left = SystemParameters.PrimaryScreenWidth - _mainWindow.ActualWidth;
             };
             _mainWindow.Show();
+
+            // 获取 MainWindow 句柄用于 RegisterHotKey + 鼠标钩子
+            var mainHwnd = new WindowInteropHelper(_mainWindow).Handle;
+            _hotkeyHwnd = mainHwnd;
+            var mainHwndSource = HwndSource.FromHwnd(mainHwnd);
+            mainHwndSource!.AddHook(MainWindowWndProc);
+
+            Logger.Info("注册键盘热键...");
+            RegisterKeyboardHotKeys();
+
+            Logger.Info("安装鼠标钩子...");
+            InstallMouseHook();
+
             if (_modeManager!.CurrentMode == ToolMode.Fishing)
                 _fishingOverlay!.ShowOverlay();
 
@@ -92,79 +109,108 @@ public partial class App : Application
         }
     }
 
-    private void CreateUIObjects(RootSettings settings)
+    // ═══════════════════════════════════════════════════════════════
+    //  RegisterHotKey — 键盘热键（无钩子，无超时风险）
+    // ═══════════════════════════════════════════════════════════════
+
+    private void RegisterKeyboardHotKeys()
     {
-        _mainWindow = new MainWindow();
+        UnregisterKeyboardHotKeys();
+        var ms = _settingsService!.Settings.ModeSwitching;
 
-        _clickPanel = new ClickToolPanel();
-        _clickPanel.Bind(settings.Click, _clickTool!);
-
-        _fishingOverlay = new FishingOverlay();
-        _fishingOverlay.Init(settings.Fishing);
-        _fishingOverlay.BindDetection(_detection!);
-
-        _fishingPanel = new FishingPanel();
-        _fishingPanel.Bind(_detection!, _fishingOverlay);
-
-        _mainWindow.RegisterFishingPanel(_fishingPanel);
+        TryRegisterOne(Win32.HK_PREV_MODE, ms.PrevModeKey);
+        TryRegisterOne(Win32.HK_NEXT_MODE, ms.NextModeKey);
+        TryRegisterOne(Win32.HK_QUICK_TOGGLE, ms.QuickToggleKey);
+        TryRegisterOne(Win32.HK_PREV_PRESET, ms.PrevPresetKey);
+        TryRegisterOne(Win32.HK_NEXT_PRESET, ms.NextPresetKey);
     }
 
-    private void InstallHooks()
+    private void TryRegisterOne(int id, KeyBinding kb)
+    {
+        if (kb.IsMouseButton || kb.IsEmpty) return;
+        if (Win32.RegisterHotKey(_hotkeyHwnd, id, kb.Modifiers, kb.VkCode))
+        {
+            _registeredHotKeyIds.Add(id);
+            Logger.Info($"热键已注册: {kb.DisplayText} (id={id})");
+        }
+        else
+        {
+            Logger.Error($"热键注册失败: {kb.DisplayText} (id={id}) err={Marshal.GetLastWin32Error()}");
+        }
+    }
+
+    private void UnregisterKeyboardHotKeys()
+    {
+        foreach (var id in _registeredHotKeyIds)
+            Win32.UnregisterHotKey(_hotkeyHwnd, id);
+        _registeredHotKeyIds.Clear();
+    }
+
+    private IntPtr MainWindowWndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        if (msg == Win32.WM_HOTKEY)
+        {
+            if (!_hotkeysEnabled) return IntPtr.Zero;
+            HandleHotKey((int)wParam);
+            handled = true;
+        }
+        return IntPtr.Zero;
+    }
+
+    private void HandleHotKey(int id)
+    {
+        if (_modeManager == null) return;
+
+        // 防重复派发（键盘连发时）
+        var now = DateTime.UtcNow;
+        if (id == _lastHotKeyId && (now - _lastHotKeyTime).TotalMilliseconds < 300)
+            return;
+        _lastHotKeyId = id;
+        _lastHotKeyTime = now;
+
+        switch (id)
+        {
+            case Win32.HK_PREV_MODE:
+                _modeManager.PrevMode();
+                break;
+            case Win32.HK_NEXT_MODE:
+                _modeManager.NextMode();
+                break;
+            case Win32.HK_QUICK_TOGGLE:
+                if (_modeManager.CurrentMode == ToolMode.Click
+                    && _settingsService!.Settings.Click.ActivePreset.TriggerMode == TriggerMode.HoldActive)
+                    _modeManager.ActivateCurrent();
+                else
+                    _modeManager.ToggleCurrent();
+                break;
+            case Win32.HK_PREV_PRESET:
+                if (_modeManager.CurrentMode == ToolMode.Click)
+                    _modeManager.PrevPreset();
+                break;
+            case Win32.HK_NEXT_PRESET:
+                if (_modeManager.CurrentMode == ToolMode.Click)
+                    _modeManager.NextPreset();
+                break;
+        }
+    }
+
+    private int _lastHotKeyId = -1;
+    private DateTime _lastHotKeyTime = DateTime.MinValue;
+
+    // ═══════════════════════════════════════════════════════════════
+    //  WH_MOUSE_LL — 鼠标侧键热键（仅 X1/X2，注入事件跳过）
+    // ═══════════════════════════════════════════════════════════════
+
+    private void InstallMouseHook()
     {
         _hook = new LowLevelHook();
 
-        // 防重复派发：同一按键短时间内不重复 BeginInvoke
-        int _lastDispatchedVk = -1;
-        int _lastDispatchedMouseBtn = -1;
-        DateTime _lastDispatchTime = DateTime.MinValue;
-
-        _hook.ShouldSuppressKey = (vk, mods) =>
-        {
-            try
-            {
-                var ms = _settingsService!.Settings.ModeSwitching;
-                bool matchPrev = KeyMatchesThreadSafe(ms.PrevModeKey, vk, mods, false, 0);
-                bool matchNext = KeyMatchesThreadSafe(ms.NextModeKey, vk, mods, false, 0);
-                bool matchQuick = KeyMatchesThreadSafe(ms.QuickToggleKey, vk, mods, false, 0);
-                bool matchPrevP = KeyMatchesThreadSafe(ms.PrevPresetKey, vk, mods, false, 0);
-                bool matchNextP = KeyMatchesThreadSafe(ms.NextPresetKey, vk, mods, false, 0);
-
-                if (matchPrev || matchNext || matchQuick || matchPrevP || matchNextP)
-                {
-                    // 防重复派发（键盘连发时）
-                    var now = DateTime.UtcNow;
-                    if (vk == _lastDispatchedVk && (now - _lastDispatchTime).TotalMilliseconds < 80)
-                        return true;
-                    _lastDispatchedVk = vk;
-                    _lastDispatchTime = now;
-
-                    Dispatcher.BeginInvoke(DispatcherPriority.Input,
-                        () => { try { _mainWindow!.TryHandleGlobalKey(vk, mods, false, 0); } catch { } });
-                    return true;
-                }
-            }
-            catch (Exception ex) { Logger.Error("ShouldSuppressKey 异常", ex); }
-            return false;
-        };
-
-        _hook.ShouldSuppressKeyUp = (vk, mods) =>
-        {
-            try
-            {
-                var ms = _settingsService!.Settings.ModeSwitching;
-                if (KeyMatchesThreadSafe(ms.QuickToggleKey, vk, mods, false, 0))
-                {
-                    Dispatcher.BeginInvoke(DispatcherPriority.Input,
-                        () => { try { _mainWindow!.TryHandleGlobalKeyUp(vk, mods, false, 0); } catch { } });
-                    return true;
-                }
-            }
-            catch (Exception ex) { Logger.Error("ShouldSuppressKeyUp 异常", ex); }
-            return false;
-        };
+        int _lastMouseBtn = -1;
+        DateTime _lastMouseTime = DateTime.MinValue;
 
         _hook.ShouldSuppressMouseButton = (button, mods) =>
         {
+            if (!_hotkeysEnabled) return false;
             try
             {
                 var ms = _settingsService!.Settings.ModeSwitching;
@@ -175,10 +221,10 @@ public partial class App : Application
                 if (matchPrev || matchNext || matchQuick)
                 {
                     var now = DateTime.UtcNow;
-                    if (button == _lastDispatchedMouseBtn && (now - _lastDispatchTime).TotalMilliseconds < 80)
+                    if (button == _lastMouseBtn && (now - _lastMouseTime).TotalMilliseconds < 80)
                         return true;
-                    _lastDispatchedMouseBtn = button;
-                    _lastDispatchTime = now;
+                    _lastMouseBtn = button;
+                    _lastMouseTime = now;
 
                     Dispatcher.BeginInvoke(DispatcherPriority.Input,
                         () => { try { _mainWindow!.TryHandleGlobalKey(0, mods, true, button); } catch { } });
@@ -191,6 +237,7 @@ public partial class App : Application
 
         _hook.ShouldSuppressMouseButtonUp = (button, mods) =>
         {
+            if (!_hotkeysEnabled) return false;
             try
             {
                 var ms = _settingsService!.Settings.ModeSwitching;
@@ -213,6 +260,25 @@ public partial class App : Application
         if (kb.IsMouseButton != isMouse) return false;
         if (isMouse) return kb.MouseButton == mouseBtn;
         return kb.VkCode == vk && kb.Modifiers == mods;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+
+    private void CreateUIObjects(RootSettings settings)
+    {
+        _mainWindow = new MainWindow();
+
+        _clickPanel = new ClickToolPanel();
+        _clickPanel.Bind(settings.Click, _clickTool!);
+
+        _fishingOverlay = new FishingOverlay();
+        _fishingOverlay.Init(settings.Fishing);
+        _fishingOverlay.BindDetection(_detection!);
+
+        _fishingPanel = new FishingPanel();
+        _fishingPanel.Bind(_detection!, _fishingOverlay);
+
+        _mainWindow.RegisterFishingPanel(_fishingPanel);
     }
 
     private void WireUpUI(RootSettings settings)
@@ -243,10 +309,8 @@ public partial class App : Application
             else { if (_detection!.IsRunning) _detection.Stop(); _fishingOverlay!.HideOverlay(); }
         };
 
-        // 方案切换：更新面板下拉 + 若运行中则重启工具
         _modeManager.PresetSwitchRequested += delta =>
         {
-            // 先停工具（用旧预设的按钮发 DoUp），再切换预设
             if (_clickTool!.IsRunning)
             {
                 _clickTool.Stop();
@@ -278,12 +342,15 @@ public partial class App : Application
         var win = new SettingsWindow(_settingsService!.Settings, _settingsService, () =>
         {
             var s = _settingsService.Settings;
-            _inputService = new InputService(50); // 右键持续时间，写死 50ms
+            _inputService = new InputService(50);
             _inputService.DebugLogInput = s.Fishing.DebugLogInput;
             _clickTool!.DebugLog = s.Fishing.DebugLogInput;
             _detection!.ResetStateMachine();
             _fishingOverlay!.UpdateFromSettings();
             _clickPanel!.UpdateFromSettings();
+
+            // 热键可能已变更，重新注册键盘热键
+            RegisterKeyboardHotKeys();
         }) { Owner = _mainWindow };
         win.ShowDialog();
         _mainWindow!.SuppressGlobalKeys = false;
@@ -301,8 +368,24 @@ public partial class App : Application
         _trayIcon = new TrayIcon(_hwndSource.Handle);
         _trayIcon.OpenRequested += () => Dispatcher.Invoke(() =>
         {
-            if (_mainWindow!.IsVisible) { _mainWindow.Hide(); if (_fishingOverlay!.IsVisible) _fishingOverlay.HideOverlay(); }
-            else { _mainWindow.Show(); if (_modeManager!.CurrentMode == ToolMode.Fishing) _fishingOverlay!.ShowOverlay(); }
+            if (_mainWindow!.IsVisible)
+            {
+                // 隐藏窗口 → 停止工具 + 注销键盘热键 + 禁用鼠标钩子，避免误触和吞键
+                _modeManager!.StopCurrent();
+                _hotkeysEnabled = false;
+                UnregisterKeyboardHotKeys();
+                _mainWindow.Hide();
+                if (_fishingOverlay!.IsVisible) _fishingOverlay.HideOverlay();
+                Logger.Info("窗口已隐藏，热键已注销");
+            }
+            else
+            {
+                _mainWindow.Show();
+                RegisterKeyboardHotKeys();
+                _hotkeysEnabled = true;
+                if (_modeManager!.CurrentMode == ToolMode.Fishing) _fishingOverlay!.ShowOverlay();
+                Logger.Info("窗口已显示，热键已注册");
+            }
         });
         _trayIcon.ExitRequested += () => Dispatcher.Invoke(() => { _mainWindow?.Close(); _fishingOverlay?.Close(); Shutdown(); });
 
@@ -332,6 +415,7 @@ public partial class App : Application
         Logger.Info("=== MC_Helper 退出 ===");
         _clickTool?.Dispose();
         _detection?.Dispose();
+        UnregisterKeyboardHotKeys();
         _hook?.Dispose();
         _trayIcon?.Dispose();
         _hwndSource?.Dispose();
