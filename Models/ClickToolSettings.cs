@@ -60,7 +60,7 @@ public class ClickToolSettings
     {
         new ClickPreset { Name = "挂机砍怪", Button = ClickButton.Left, Behavior = ClickBehavior.Rapid, IntervalMs = 1200, HoldMs = 50, TriggerMode = TriggerMode.Toggle },
         new ClickPreset { Name = "长按挖掘", Button = ClickButton.Left, Behavior = ClickBehavior.Hold, TriggerMode = TriggerMode.Toggle },
-        new ClickPreset { Name = "破基岩", Button = ClickButton.Right, Behavior = ClickBehavior.Rapid, IntervalMs = 50, HoldMs = 50, TriggerMode = TriggerMode.HoldActive },
+        new ClickPreset { Name = "破基岩", Button = ClickButton.Right, Behavior = ClickBehavior.Rapid, IntervalMs = 30, HoldMs = 20, TriggerMode = TriggerMode.HoldActive },
         new ClickPreset { Name = "树场种植", Button = ClickButton.Right, Behavior = ClickBehavior.Hold, TriggerMode = TriggerMode.Toggle }
     };
 
