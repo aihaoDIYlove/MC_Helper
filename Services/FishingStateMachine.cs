@@ -104,6 +104,18 @@ public class FishingStateMachine
     {
         if (!_settings.AutoFishEnabled) return;
 
+        // 超时兜底：若提杆后超过 ReelingInTimeoutMs (默认 6000ms) 仍未识别到"浮漂收回"，
+        // 直接发右键抛竿 + 回到 Fishing（鱼还在手里，重新试）
+        var elapsed = (DateTime.Now - _stateEnteredAt).TotalMilliseconds;
+        if (elapsed >= _settings.ReelingInTimeoutMs)
+        {
+            DebugInfo?.Invoke($"[状态机] ReelingIn 超时 {elapsed:F0}ms，强制重抛");
+            RightClickRequested?.Invoke("ReelingIn 超时重抛");
+            _cooldownActive = true;
+            TransitionTo(FishingState.Fishing, "超时强制重抛");
+            return;
+        }
+
         if (FuzzyMatchAny(textLines, _settings.ReelPhrases))
         {
             var brokenPhrases = _settings.BrokenPhrases;

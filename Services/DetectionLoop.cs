@@ -165,8 +165,9 @@ public class DetectionLoop : IDisposable
             if (_tickCount % 10 == 0 && lines.Count > 0)
                 DebugInfo?.Invoke($"OCR({lines.Count}行): {joined}");
 
-            if (lines.Count > 0)
-                _fsm.Process(lines);
+            // 始终调用 Process，即使 OCR 返回空行。
+            // 时间驱动的状态（ReelingIn 超时、ReeledIn 倒计时重抛）不依赖 OCR 结果。
+            _fsm.Process(lines);
         }
         catch (Exception ex)
         {

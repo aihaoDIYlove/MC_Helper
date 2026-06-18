@@ -21,6 +21,8 @@ public class FishingSettings
 
     public int CastCooldownMs { get; set; } = 2000;
     public int RecastDelayMs { get; set; } = 400;
+    /// <summary>ReelingIn 超时兜底 (ms)：提杆后最久等多久未识别到"收回"，强制重抛</summary>
+    public int ReelingInTimeoutMs { get; set; } = 6000;
 
     public bool AutoFishEnabled { get; set; } = true;
     public bool DebugLogOcr { get; set; } = false;
