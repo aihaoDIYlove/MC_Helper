@@ -106,6 +106,11 @@ public class ClickTool : IDisposable
             catch (Exception ex) { Logger.Error("ClickTool.Stop DoUp 异常", ex); }
         }
 
+        // 兜底清理：无脑发送 LEFTUP + RIGHTUP，防止任何残留的按键按下状态卡死鼠标
+        // 已经 UP 的键再发 UP 是空操作，不会影响游戏
+        try { _input.SendLeftUp(); } catch { }
+        try { _input.SendRightUp(); } catch { }
+
         StateChanged?.Invoke(false);
         Logger.Info("ClickTool 停止");
     }

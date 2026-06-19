@@ -137,8 +137,7 @@ public static class Win32
     public static extern bool UnregisterHotKey(IntPtr hWnd, int id);
 
     // ── RegisterHotKey 预定义 ID ──────────────────
-    public const int HK_PREV_MODE = 1;
-    public const int HK_NEXT_MODE = 2;
+    public const int HK_TOGGLE_MODE = 1;
     public const int HK_QUICK_TOGGLE = 3;
     public const int HK_PREV_PRESET = 4;
     public const int HK_NEXT_PRESET = 5;

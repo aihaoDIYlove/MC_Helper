@@ -58,14 +58,6 @@ public class ModeManager
         ModeChanged?.Invoke(mode);
     }
 
-    public void PrevMode()
-    {
-        var modes = Enum.GetValues<ToolMode>();
-        int idx = Array.IndexOf(modes, _currentMode);
-        int newIdx = (idx - 1 + modes.Length) % modes.Length;
-        SwitchTo(modes[newIdx]);
-    }
-
     public void NextMode()
     {
         var modes = Enum.GetValues<ToolMode>();

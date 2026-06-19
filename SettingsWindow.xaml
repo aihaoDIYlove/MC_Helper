@@ -481,36 +481,17 @@
                                             <ColumnDefinition Width="140"/>
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="上一个模式"
+                                        <TextBlock Text="切换模式"
                                                    Style="{StaticResource SettingLabel}"/>
-                                        <TextBox x:Name="TxtPrevModeKey"
+                                        <TextBox x:Name="TxtToggleModeKey"
                                                  Grid.Column="1" Width="130"
                                                  Style="{StaticResource ReadOnlyTextBox}"/>
-                                        <Button x:Name="BtnBindPrevMode"
+                                        <Button x:Name="BtnBindToggleMode"
                                                 Grid.Column="2"
                                                 Content="点击绑定"
                                                 Style="{StaticResource SmallButton}"
                                                 Width="100" Height="32"
-                                                Click="BtnBindPrevMode_Click"/>
-                                    </Grid>
-
-                                    <Grid Margin="0,0,0,8">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="110"/>
-                                            <ColumnDefinition Width="140"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="下一个模式"
-                                                   Style="{StaticResource SettingLabel}"/>
-                                        <TextBox x:Name="TxtNextModeKey"
-                                                 Grid.Column="1" Width="130"
-                                                 Style="{StaticResource ReadOnlyTextBox}"/>
-                                        <Button x:Name="BtnBindNextMode"
-                                                Grid.Column="2"
-                                                Content="点击绑定"
-                                                Style="{StaticResource SmallButton}"
-                                                Width="100" Height="32"
-                                                Click="BtnBindNextMode_Click"/>
+                                                Click="BtnBindToggleMode_Click"/>
                                     </Grid>
 
                                     <Grid>

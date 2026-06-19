@@ -15,7 +15,7 @@ public partial class SettingsWindow : Window
     private readonly SettingsService _settingsService;
     private readonly Action? _onSaved;
 
-    private enum BindTarget { None, PrevMode, NextMode, QuickToggle, PrevPreset, NextPreset }
+    private enum BindTarget { None, ToggleMode, QuickToggle, PrevPreset, NextPreset }
     private BindTarget _capturing;
     private Models.KeyBinding? _capturedBinding;
 
@@ -92,8 +92,7 @@ public partial class SettingsWindow : Window
     private void LoadKeyBindings()
     {
         var ms = _settings.ModeSwitching;
-        TxtPrevModeKey.Text = ms.PrevModeKey.DisplayText;
-        TxtNextModeKey.Text = ms.NextModeKey.DisplayText;
+        TxtToggleModeKey.Text = ms.ToggleModeKey.DisplayText;
         TxtQuickToggleKey.Text = ms.QuickToggleKey.DisplayText;
         TxtPrevPresetKey.Text = ms.PrevPresetKey.DisplayText;
         TxtNextPresetKey.Text = ms.NextPresetKey.DisplayText;
@@ -114,8 +113,7 @@ public partial class SettingsWindow : Window
 
     private void RefreshBindButtons()
     {
-        SetBindBtn(BtnBindPrevMode, _capturing == BindTarget.PrevMode);
-        SetBindBtn(BtnBindNextMode, _capturing == BindTarget.NextMode);
+        SetBindBtn(BtnBindToggleMode, _capturing == BindTarget.ToggleMode);
         SetBindBtn(BtnBindQuickToggle, _capturing == BindTarget.QuickToggle);
         SetBindBtn(BtnBindPrevPreset, _capturing == BindTarget.PrevPreset);
         SetBindBtn(BtnBindNextPreset, _capturing == BindTarget.NextPreset);
@@ -179,8 +177,7 @@ public partial class SettingsWindow : Window
 
         switch (_capturing)
         {
-            case BindTarget.PrevMode: ms.PrevModeKey = _capturedBinding; TxtPrevModeKey.Text = display; break;
-            case BindTarget.NextMode: ms.NextModeKey = _capturedBinding; TxtNextModeKey.Text = display; break;
+            case BindTarget.ToggleMode: ms.ToggleModeKey = _capturedBinding; TxtToggleModeKey.Text = display; break;
             case BindTarget.QuickToggle: ms.QuickToggleKey = _capturedBinding; TxtQuickToggleKey.Text = display; break;
             case BindTarget.PrevPreset: ms.PrevPresetKey = _capturedBinding; TxtPrevPresetKey.Text = display; break;
             case BindTarget.NextPreset: ms.NextPresetKey = _capturedBinding; TxtNextPresetKey.Text = display; break;
@@ -188,8 +185,7 @@ public partial class SettingsWindow : Window
         StopCapture();
     }
 
-    private void BtnBindPrevMode_Click(object s, RoutedEventArgs e) => StartCapture(BindTarget.PrevMode);
-    private void BtnBindNextMode_Click(object s, RoutedEventArgs e) => StartCapture(BindTarget.NextMode);
+    private void BtnBindToggleMode_Click(object s, RoutedEventArgs e) => StartCapture(BindTarget.ToggleMode);
     private void BtnBindQuickToggle_Click(object s, RoutedEventArgs e) => StartCapture(BindTarget.QuickToggle);
     private void BtnBindPrevPreset_Click(object s, RoutedEventArgs e) => StartCapture(BindTarget.PrevPreset);
     private void BtnBindNextPreset_Click(object s, RoutedEventArgs e) => StartCapture(BindTarget.NextPreset);

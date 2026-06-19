@@ -118,8 +118,7 @@ public partial class App : Application
         UnregisterKeyboardHotKeys();
         var ms = _settingsService!.Settings.ModeSwitching;
 
-        TryRegisterOne(Win32.HK_PREV_MODE, ms.PrevModeKey);
-        TryRegisterOne(Win32.HK_NEXT_MODE, ms.NextModeKey);
+        TryRegisterOne(Win32.HK_TOGGLE_MODE, ms.ToggleModeKey);
         TryRegisterOne(Win32.HK_QUICK_TOGGLE, ms.QuickToggleKey);
         TryRegisterOne(Win32.HK_PREV_PRESET, ms.PrevPresetKey);
         TryRegisterOne(Win32.HK_NEXT_PRESET, ms.NextPresetKey);
@@ -170,16 +169,18 @@ public partial class App : Application
 
         switch (id)
         {
-            case Win32.HK_PREV_MODE:
-                _modeManager.PrevMode();
-                break;
-            case Win32.HK_NEXT_MODE:
+            case Win32.HK_TOGGLE_MODE:
                 _modeManager.NextMode();
                 break;
             case Win32.HK_QUICK_TOGGLE:
                 if (_modeManager.CurrentMode == ToolMode.Click
                     && _settingsService!.Settings.Click.ActivePreset.TriggerMode == TriggerMode.HoldActive)
+                {
                     _modeManager.ActivateCurrent();
+                    // 键盘热键没有 KeyUp 事件（RegisterHotKey 只发 WM_HOTKEY），用轮询补检松键
+                    var qk = _settingsService.Settings.ModeSwitching.QuickToggleKey;
+                    _mainWindow!.StartKeyboardHoldActivePoll(qk.VkCode, qk.Modifiers);
+                }
                 else
                     _modeManager.ToggleCurrent();
                 break;
@@ -214,11 +215,10 @@ public partial class App : Application
             try
             {
                 var ms = _settingsService!.Settings.ModeSwitching;
-                bool matchPrev = KeyMatchesThreadSafe(ms.PrevModeKey, 0, mods, true, button);
-                bool matchNext = KeyMatchesThreadSafe(ms.NextModeKey, 0, mods, true, button);
+                bool matchToggle = KeyMatchesThreadSafe(ms.ToggleModeKey, 0, mods, true, button);
                 bool matchQuick = KeyMatchesThreadSafe(ms.QuickToggleKey, 0, mods, true, button);
 
-                if (matchPrev || matchNext || matchQuick)
+                if (matchToggle || matchQuick)
                 {
                     var now = DateTime.UtcNow;
                     if (button == _lastMouseBtn && (now - _lastMouseTime).TotalMilliseconds < 80)
@@ -241,11 +241,19 @@ public partial class App : Application
             try
             {
                 var ms = _settingsService!.Settings.ModeSwitching;
-                if (KeyMatchesThreadSafe(ms.QuickToggleKey, 0, mods, true, button))
+                // 与 ShouldSuppressMouseButton 对称：ToggleMode 和 QuickToggle 的 UP 都要吃掉
+                bool matchToggleUp = KeyMatchesThreadSafe(ms.ToggleModeKey, 0, mods, true, button);
+                bool matchQuickUp = KeyMatchesThreadSafe(ms.QuickToggleKey, 0, mods, true, button);
+
+                if (matchQuickUp)
                 {
                     Dispatcher.BeginInvoke(DispatcherPriority.Input,
                         () => { try { _mainWindow!.TryHandleGlobalKeyUp(0, mods, true, button); } catch { } });
                     return true;
+                }
+                if (matchToggleUp)
+                {
+                    return true; // 吃掉 UP，与 DOWN 保持平衡
                 }
             }
             catch (Exception ex) { Logger.Error("ShouldSuppressMouseButtonUp 异常", ex); }
