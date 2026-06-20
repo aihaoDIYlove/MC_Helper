@@ -12,7 +12,7 @@ public class ModeSettings
     public KeyBinding ToggleModeKey { get; set; } = new(0xBB); // VK_OEM_PLUS
 
     /// <summary>快速启停按键 (默认 O)</summary>
-    public KeyBinding QuickToggleKey { get; set; } = new(0x4F); // 'O'
+    public KeyBinding QuickToggleKey { get; set; } = new(0xC0); // '`' (VK_OEM_3)
 
     /// <summary>上一个方案按键（点击模式，默认 [）</summary>
     public KeyBinding PrevPresetKey { get; set; } = new(0xDB); // VK_OEM_4 = '['
