@@ -141,6 +141,7 @@ public static class Win32
     public const int HK_QUICK_TOGGLE = 3;
     public const int HK_PREV_PRESET = 4;
     public const int HK_NEXT_PRESET = 5;
+    public const int HK_TOGGLE_VISIBILITY = 6;  // 始终活跃，不受隐藏影响
 
     // ── 低层钩子 API ─────────────────────────────
 

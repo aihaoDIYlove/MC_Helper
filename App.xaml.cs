@@ -122,6 +122,10 @@ public partial class App : Application
         TryRegisterOne(Win32.HK_QUICK_TOGGLE, ms.QuickToggleKey);
         TryRegisterOne(Win32.HK_PREV_PRESET, ms.PrevPresetKey);
         TryRegisterOne(Win32.HK_NEXT_PRESET, ms.NextPresetKey);
+
+        // 显示/隐藏快捷键始终活跃（Ctrl+`），不受 _hotkeysEnabled 影响
+        TryRegisterOne(Win32.HK_TOGGLE_VISIBILITY,
+            new Models.KeyBinding(0xC0, 0x2)); // Ctrl + ` (VK_OEM_3)
     }
 
     private void TryRegisterOne(int id, KeyBinding kb)
@@ -141,16 +145,27 @@ public partial class App : Application
     private void UnregisterKeyboardHotKeys()
     {
         foreach (var id in _registeredHotKeyIds)
+        {
+            if (id == Win32.HK_TOGGLE_VISIBILITY) continue; // 始终活跃，不注销
             Win32.UnregisterHotKey(_hotkeyHwnd, id);
-        _registeredHotKeyIds.Clear();
+        }
+        _registeredHotKeyIds.RemoveWhere(id => id != Win32.HK_TOGGLE_VISIBILITY);
     }
 
     private IntPtr MainWindowWndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
         if (msg == Win32.WM_HOTKEY)
         {
+            int id = (int)wParam;
+            // 显示/隐藏快捷键始终活跃，不受 _hotkeysEnabled 影响
+            if (id == Win32.HK_TOGGLE_VISIBILITY)
+            {
+                ToggleMainWindowVisibility();
+                handled = true;
+                return IntPtr.Zero;
+            }
             if (!_hotkeysEnabled) return IntPtr.Zero;
-            HandleHotKey((int)wParam);
+            HandleHotKey(id);
             handled = true;
         }
         return IntPtr.Zero;
@@ -197,6 +212,31 @@ public partial class App : Application
 
     private int _lastHotKeyId = -1;
     private DateTime _lastHotKeyTime = DateTime.MinValue;
+
+    /// <summary>Ctrl+` 显示/隐藏主窗口，隐藏状态下也能触发</summary>
+    private void ToggleMainWindowVisibility()
+    {
+        Dispatcher.Invoke(() =>
+        {
+            if (_mainWindow!.IsVisible)
+            {
+                _modeManager!.StopCurrent();
+                _hotkeysEnabled = false;
+                UnregisterKeyboardHotKeys();
+                _mainWindow.Hide();
+                if (_fishingOverlay!.IsVisible) _fishingOverlay.HideOverlay();
+                Logger.Info("快捷键隐藏窗口，热键已注销");
+            }
+            else
+            {
+                _mainWindow.Show();
+                RegisterKeyboardHotKeys();
+                _hotkeysEnabled = true;
+                if (_modeManager!.CurrentMode == ToolMode.Fishing) _fishingOverlay!.ShowOverlay();
+                Logger.Info("快捷键显示窗口，热键已注册");
+            }
+        });
+    }
 
     // ═══════════════════════════════════════════════════════════════
     //  WH_MOUSE_LL — 鼠标侧键热键（仅 X1/X2，注入事件跳过）
