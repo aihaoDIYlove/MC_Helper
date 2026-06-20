@@ -252,6 +252,8 @@ public partial class App : Application
         _hook.ShouldSuppressMouseButton = (button, mods) =>
         {
             if (!_hotkeysEnabled) return false;
+            // 设置窗口打开时不吞事件，否则侧键绑定过程会因 UP 被吃导致不平衡
+            if (_mainWindow!.SuppressGlobalKeys) return false;
             try
             {
                 var ms = _settingsService!.Settings.ModeSwitching;
@@ -278,6 +280,8 @@ public partial class App : Application
         _hook.ShouldSuppressMouseButtonUp = (button, mods) =>
         {
             if (!_hotkeysEnabled) return false;
+            // 设置窗口打开时不吞事件，否则侧键绑定过程会因 UP 被吃导致不平衡
+            if (_mainWindow!.SuppressGlobalKeys) return false;
             try
             {
                 var ms = _settingsService!.Settings.ModeSwitching;
