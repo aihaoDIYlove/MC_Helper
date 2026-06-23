@@ -737,6 +737,8 @@
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="36"/>
                                             <RowDefinition Height="36"/>
+                                            <RowDefinition Height="36"/>
+                                            <RowDefinition Height="36"/>
                                         </Grid.RowDefinitions>
                                         <TextBlock Text="抛竿后冷却"
                                                    Style="{StaticResource SettingLabel}"/>
@@ -755,6 +757,24 @@
                                         <TextBlock Grid.Row="1" Grid.Column="2"
                                                    Style="{StaticResource SubLabel}"
                                                    Text="检测到收回后等待此时间，自动右键抛竿"
+                                                   Margin="10,0,0,0"/>
+                                        <TextBlock Text="咬钩等待超时" Grid.Row="2"
+                                                   Style="{StaticResource SettingLabel}"/>
+                                        <TextBox x:Name="TxtFishingTimeout"
+                                                 Grid.Row="2" Grid.Column="1" Width="60"
+                                                 Style="{StaticResource CardTextBox}"/>
+                                        <TextBlock Grid.Row="2" Grid.Column="2"
+                                                   Style="{StaticResource SubLabel}"
+                                                   Text="等待鱼上钩超过此时间则自动收杆重抛（如勾到溺尸）"
+                                                   Margin="10,0,0,0"/>
+                                        <TextBlock Text="收线识别超时" Grid.Row="3"
+                                                   Style="{StaticResource SettingLabel}"/>
+                                        <TextBox x:Name="TxtReelingInTimeout"
+                                                 Grid.Row="3" Grid.Column="1" Width="60"
+                                                 Style="{StaticResource CardTextBox}"/>
+                                        <TextBlock Grid.Row="3" Grid.Column="2"
+                                                   Style="{StaticResource SubLabel}"
+                                                   Text="提杆后超过此时间未识别到收回，强制重抛"
                                                    Margin="10,0,0,0"/>
                                     </Grid>
                                 </StackPanel>

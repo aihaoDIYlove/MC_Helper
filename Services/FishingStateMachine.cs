@@ -89,6 +89,17 @@ public class FishingStateMachine
             _cooldownActive = false;
         }
 
+        // 超时兜底：超过 FishingTimeoutMs 未检测到咬钩，强制重抛（可能勾到溺尸等）
+        var fishingElapsed = (now - _stateEnteredAt).TotalMilliseconds;
+        if (fishingElapsed >= _settings.FishingTimeoutMs)
+        {
+            DebugInfo?.Invoke($"[状态机] Fishing 超时 {fishingElapsed / 1000:F0}s，强制重抛");
+            RightClickRequested?.Invoke("钓鱼超时重抛");
+            _cooldownActive = true;
+            TransitionTo(FishingState.Fishing, "超时强制重抛");
+            return;
+        }
+
         if (FuzzyMatchAny(textLines, _settings.BitePhrases))
         {
             RightClickRequested?.Invoke(string.Join(", ", textLines));

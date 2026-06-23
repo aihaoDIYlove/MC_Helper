@@ -24,6 +24,9 @@ public class FishingSettings
     /// <summary>ReelingIn 超时兜底 (ms)：提杆后最久等多久未识别到"收回"，强制重抛</summary>
     public int ReelingInTimeoutMs { get; set; } = 6000;
 
+    /// <summary>钓鱼超时 (ms)：等待鱼上钩超过此时间未检测到咬钩，强制重抛（防止勾到溺尸等）</summary>
+    public int FishingTimeoutMs { get; set; } = 120_000; // 2 分钟
+
     public bool AutoFishEnabled { get; set; } = true;
     public bool DebugLogOcr { get; set; } = false;
     public bool DebugOverlayEnabled { get; set; } = false;
