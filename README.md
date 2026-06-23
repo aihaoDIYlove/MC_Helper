@@ -6,6 +6,7 @@ Minecraft 辅助工具——悬浮窗 + 全局快捷键，适用于自动钓鱼�
 
 ![点击模式ui](./img/1.webp)
 感谢好基友礼花出镜（未征得本人允许
+Special thanks to lihua273 for volunteering as the in-game model.
 ![钓鱼模式ui](./img/2.webp)
 
 ## 特性
