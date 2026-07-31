@@ -728,6 +728,10 @@
                                 <StackPanel>
                                     <TextBlock Style="{StaticResource CardHeader}"
                                                Text="延迟设置 (ms)"/>
+                                    <CheckBox x:Name="ChkAutoRecastIdle"
+                                              Style="{StaticResource FlatCheck}"
+                                              Content="Idle 超时自动抛竿（意外收杆后自动恢复）"
+                                              Margin="0,0,0,6"/>
                                     <Grid HorizontalAlignment="Left" Margin="0,4,0,0">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="100"/>
@@ -735,6 +739,7 @@
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
                                         <Grid.RowDefinitions>
+                                            <RowDefinition Height="36"/>
                                             <RowDefinition Height="36"/>
                                             <RowDefinition Height="36"/>
                                             <RowDefinition Height="36"/>
@@ -775,6 +780,15 @@
                                         <TextBlock Grid.Row="3" Grid.Column="2"
                                                    Style="{StaticResource SubLabel}"
                                                    Text="提杆后超过此时间未识别到收回，强制重抛"
+                                                   Margin="10,0,0,0"/>
+                                        <TextBlock Text="空闲自动抛竿" Grid.Row="4"
+                                                   Style="{StaticResource SettingLabel}"/>
+                                        <TextBox x:Name="TxtAutoRecastIdleDelay"
+                                                 Grid.Row="4" Grid.Column="1" Width="60"
+                                                 Style="{StaticResource CardTextBox}"/>
+                                        <TextBlock Grid.Row="4" Grid.Column="2"
+                                                   Style="{StaticResource SubLabel}"
+                                                   Text="停在 Idle 超过此时间自动右键抛竿（默认 15 秒）"
                                                    Margin="10,0,0,0"/>
                                     </Grid>
                                 </StackPanel>

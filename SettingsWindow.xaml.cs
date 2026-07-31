@@ -328,6 +328,8 @@ public partial class SettingsWindow : Window
         TxtRecastDelay.Text = f.RecastDelayMs.ToString();
         TxtFishingTimeout.Text = f.FishingTimeoutMs.ToString();
         TxtReelingInTimeout.Text = f.ReelingInTimeoutMs.ToString();
+        ChkAutoRecastIdle.IsChecked = f.AutoRecastFromIdleEnabled;
+        TxtAutoRecastIdleDelay.Text = f.AutoRecastFromIdleDelayMs.ToString();
         ChkAutoSwitchRod.IsChecked = f.AutoSwitchRodEnabled;
         TxtSwitchRodDelay.Text = f.SwitchRodDelayMs.ToString();
         TxtSwitchRodRecast.Text = f.SwitchRodRecastMs.ToString();
@@ -358,6 +360,9 @@ public partial class SettingsWindow : Window
         f.RecastDelayMs = int.Parse(TxtRecastDelay.Text);
         f.FishingTimeoutMs = int.Parse(TxtFishingTimeout.Text);
         f.ReelingInTimeoutMs = int.Parse(TxtReelingInTimeout.Text);
+        f.AutoRecastFromIdleEnabled = ChkAutoRecastIdle.IsChecked == true;
+        if (int.TryParse(TxtAutoRecastIdleDelay.Text, out var idleDelay))
+            f.AutoRecastFromIdleDelayMs = Math.Max(1000, idleDelay);
         f.AutoSwitchRodEnabled = ChkAutoSwitchRod.IsChecked == true;
         f.SwitchRodDelayMs = int.Parse(TxtSwitchRodDelay.Text);
         f.SwitchRodRecastMs = int.Parse(TxtSwitchRodRecast.Text);

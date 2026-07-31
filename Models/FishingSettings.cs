@@ -28,6 +28,12 @@ public class FishingSettings
     public int FishingTimeoutMs { get; set; } = 120_000; // 2 分钟
 
     public bool AutoFishEnabled { get; set; } = true;
+
+    /// <summary>空闲超时自动抛竿：停在 Idle 超过此时间后自动右键抛竿（如意外收杆）</summary>
+    public bool AutoRecastFromIdleEnabled { get; set; } = true;
+    /// <summary>空闲超时自动抛竿延迟 (ms)，默认 15 秒</summary>
+    public int AutoRecastFromIdleDelayMs { get; set; } = 15_000;
+
     public bool DebugLogOcr { get; set; } = false;
     public bool DebugOverlayEnabled { get; set; } = false;
     public double FuzzyMatchThreshold { get; set; } = 0.75;

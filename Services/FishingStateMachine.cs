@@ -70,6 +70,14 @@ public class FishingStateMachine
             _cooldownActive = true;
             TransitionTo(FishingState.Fishing, "检测到抛竿");
         }
+        else if (_settings.AutoRecastFromIdleEnabled
+            && (DateTime.Now - _stateEnteredAt).TotalMilliseconds >= _settings.AutoRecastFromIdleDelayMs)
+        {
+            DebugInfo?.Invoke($"[状态机] Idle 超时 {(DateTime.Now - _stateEnteredAt).TotalSeconds:F0}s，自动抛竿");
+            RightClickRequested?.Invoke("Idle 超时自动抛竿");
+            _cooldownActive = true;
+            TransitionTo(FishingState.Fishing, "Idle 超时自动抛竿");
+        }
         else if (textLines.Count > 0 && ++_idleDebugCounter % 10 == 0)
         {
             var sample = string.Join(" | ", textLines.Take(3));
