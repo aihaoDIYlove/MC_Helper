@@ -8,7 +8,8 @@ public enum FishingState
     Idle,
     Fishing,
     ReelingIn,
-    ReeledIn
+    ReeledIn,
+    Probing
 }
 
 public class FishingStateMachine
@@ -16,6 +17,10 @@ public class FishingStateMachine
     private readonly FishingSettings _settings;
     private DateTime _stateEnteredAt;
     private bool _cooldownActive;
+    /// <summary>最近一次识别到水中短语（溅起水花）的时刻</summary>
+    private DateTime _lastSplashSeenAt;
+    /// <summary>当前连续识别到水中短语的起始时刻</summary>
+    private DateTime _splashStreakStart;
 
     public FishingState CurrentState { get; private set; } = FishingState.Idle;
 
@@ -28,6 +33,8 @@ public class FishingStateMachine
     {
         _settings = settings;
         _stateEnteredAt = DateTime.Now;
+        _lastSplashSeenAt = DateTime.Now;
+        _splashStreakStart = DateTime.Now;
     }
 
     public void Process(IReadOnlyList<string> textLines)
@@ -51,11 +58,17 @@ public class FishingStateMachine
             case FishingState.ReeledIn:
                 ProcessReeledIn(now);
                 break;
+
+            case FishingState.Probing:
+                ProcessProbing(textLines);
+                break;
         }
     }
 
     public void Reset()
     {
+        _lastSplashSeenAt = DateTime.Now;
+        _splashStreakStart = DateTime.Now;
         TransitionTo(FishingState.Idle, "手动重置");
     }
 
@@ -64,21 +77,49 @@ public class FishingStateMachine
     private void ProcessIdle(IReadOnlyList<string> textLines)
     {
         if (!_settings.AutoFishEnabled) return;
+        var now = DateTime.Now;
 
+        // 明确抛竿完成
         if (FuzzyMatchAny(textLines, _settings.CastPhrases))
         {
+            _lastSplashSeenAt = now;
+            _splashStreakStart = now;
             _cooldownActive = true;
             TransitionTo(FishingState.Fishing, "检测到抛竿");
+            return;
         }
-        else if (_settings.AutoRecastFromIdleEnabled
-            && (DateTime.Now - _stateEnteredAt).TotalMilliseconds >= _settings.AutoRecastFromIdleDelayMs)
+
+        // 水花持续出现 → 鱼漂在水中（避免漏识别"浮漂甩出"导致状态异常）
+        if (FuzzyMatchAny(textLines, _settings.SplashPhrases))
         {
-            DebugInfo?.Invoke($"[状态机] Idle 超时 {(DateTime.Now - _stateEnteredAt).TotalSeconds:F0}s，自动抛竿");
+            // 距上次命中超过两个轮询周期视为断流，重新开始累计
+            if ((now - _lastSplashSeenAt).TotalMilliseconds > _settings.PollingIntervalMs * 2)
+                _splashStreakStart = now;
+            _lastSplashSeenAt = now;
+
+            if ((now - _splashStreakStart).TotalMilliseconds >= _settings.CastSplashConfirmMs)
+            {
+                DebugInfo?.Invoke($"[状态机] 水花持续 {(now - _splashStreakStart).TotalSeconds:F1}s，确认鱼漂在水中");
+                _cooldownActive = true;
+                TransitionTo(FishingState.Fishing, "水花持续确认鱼漂在水中");
+            }
+            return;
+        }
+
+        // 空闲超时兜底：自动抛竿
+        if (_settings.AutoRecastFromIdleEnabled
+            && (now - _stateEnteredAt).TotalMilliseconds >= _settings.AutoRecastFromIdleDelayMs)
+        {
+            DebugInfo?.Invoke($"[状态机] Idle 超时 {(now - _stateEnteredAt).TotalSeconds:F0}s，自动抛竿");
             RightClickRequested?.Invoke("Idle 超时自动抛竿");
+            _lastSplashSeenAt = now;
+            _splashStreakStart = now;
             _cooldownActive = true;
             TransitionTo(FishingState.Fishing, "Idle 超时自动抛竿");
+            return;
         }
-        else if (textLines.Count > 0 && ++_idleDebugCounter % 10 == 0)
+
+        if (textLines.Count > 0 && ++_idleDebugCounter % 10 == 0)
         {
             var sample = string.Join(" | ", textLines.Take(3));
             DebugInfo?.Invoke($"未匹配: [{sample}]");
@@ -103,11 +144,13 @@ public class FishingStateMachine
         {
             DebugInfo?.Invoke($"[状态机] Fishing 超时 {fishingElapsed / 1000:F0}s，强制重抛");
             RightClickRequested?.Invoke("钓鱼超时重抛");
+            _lastSplashSeenAt = now;
             _cooldownActive = true;
             TransitionTo(FishingState.Fishing, "超时强制重抛");
             return;
         }
 
+        // 咬钩：额外出现的"浮漂溅起水花"（必须先于 SplashPhrases，因后者是其子串）
         if (FuzzyMatchAny(textLines, _settings.BitePhrases))
         {
             RightClickRequested?.Invoke(string.Join(", ", textLines));
@@ -115,8 +158,22 @@ public class FishingStateMachine
             return;
         }
 
-        if (FuzzyMatchAny(textLines, _settings.ReelPhrases))
-            TransitionTo(FishingState.Idle, "用户主动收杆");
+        // 鱼漂在水中：持续出现"溅起水花"
+        if (FuzzyMatchAny(textLines, _settings.SplashPhrases))
+        {
+            _lastSplashSeenAt = now;
+            return;
+        }
+
+        // 水花消失超过 NoSplashTimeoutMs → 鱼漂不在水中，右键探测确认当前状态
+        if ((now - _lastSplashSeenAt).TotalMilliseconds >= _settings.NoSplashTimeoutMs)
+        {
+            DebugInfo?.Invoke($"[状态机] 水花消失 {(now - _lastSplashSeenAt).TotalSeconds:F1}s，探测鱼漂状态");
+            RightClickRequested?.Invoke("水花消失，尝试抛竿确认");
+            _lastSplashSeenAt = now; // 缓冲，防止探测后立即再次触发
+            TransitionTo(FishingState.Probing, "水花消失，探测鱼漂状态");
+            return;
+        }
     }
 
     private void ProcessReelingIn(IReadOnlyList<string> textLines)
@@ -172,6 +229,57 @@ public class FishingStateMachine
             _cooldownActive = true;
             TransitionTo(FishingState.Fishing, "自动重抛");
         }
+    }
+
+    /// <summary>探测状态超时兜底 (ms)：未识别到任何确认字幕则回钓鱼状态重试</summary>
+    private const int ProbeTimeoutMs = 4000;
+
+    /// <summary>
+    /// 探测状态：水花消失后已右键抛竿，通过字幕反馈确认鱼漂实际状态。
+    /// - 浮漂收回：勾到东西（动物/溺尸等），确认鱼漂已收回 → 再次抛竿
+    /// - 浮漂甩出：浮漂因未知原因回收或漏识别了一次收回 → 已重新抛出，正常钓鱼
+    /// - 溅起水花：抛竿成功，鱼漂在水中
+    /// </summary>
+    private void ProcessProbing(IReadOnlyList<string> textLines)
+    {
+        if (!_settings.AutoFishEnabled) return;
+
+        if (FuzzyMatchAny(textLines, _settings.ReelPhrases))
+        {
+            DebugInfo?.Invoke("[状态机] 探测确认：浮漂收回（勾到东西），再次抛竿");
+            RightClickRequested?.Invoke("探测到收回，再次抛竿");
+            EnterFishing("探测确认勾到东西");
+            return;
+        }
+
+        if (FuzzyMatchAny(textLines, _settings.CastPhrases))
+        {
+            DebugInfo?.Invoke("[状态机] 探测确认：浮漂甩出，回到钓鱼中");
+            EnterFishing("探测确认已抛竿");
+            return;
+        }
+
+        if (FuzzyMatchAny(textLines, _settings.SplashPhrases))
+        {
+            DebugInfo?.Invoke("[状态机] 探测确认：水花出现，回到钓鱼中");
+            EnterFishing("探测确认鱼漂在水中");
+            return;
+        }
+
+        // 探测超时兜底：字幕未被识别（OCR 异常等），回钓鱼状态等待下一轮探测
+        var elapsed = (DateTime.Now - _stateEnteredAt).TotalMilliseconds;
+        if (elapsed >= ProbeTimeoutMs)
+        {
+            DebugInfo?.Invoke($"[状态机] 探测超时 {elapsed:F0}ms，回到钓鱼中");
+            EnterFishing("探测超时兜底");
+        }
+    }
+
+    private void EnterFishing(string reason)
+    {
+        _lastSplashSeenAt = DateTime.Now; // 缓冲，避免回钓鱼后立即再次触发探测
+        _cooldownActive = true;
+        TransitionTo(FishingState.Fishing, reason);
     }
 
     private void TransitionTo(FishingState newState, string reason)

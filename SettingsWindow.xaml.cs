@@ -324,12 +324,15 @@ public partial class SettingsWindow : Window
         TxtCastPhrases.Text = string.Join(", ", f.CastPhrases);
         TxtBitePhrases.Text = string.Join(", ", f.BitePhrases);
         TxtReelPhrases.Text = string.Join(", ", f.ReelPhrases);
+        TxtSplashPhrases.Text = string.Join(", ", f.SplashPhrases);
         TxtCastCooldown.Text = f.CastCooldownMs.ToString();
         TxtRecastDelay.Text = f.RecastDelayMs.ToString();
         TxtFishingTimeout.Text = f.FishingTimeoutMs.ToString();
         TxtReelingInTimeout.Text = f.ReelingInTimeoutMs.ToString();
         ChkAutoRecastIdle.IsChecked = f.AutoRecastFromIdleEnabled;
         TxtAutoRecastIdleDelay.Text = f.AutoRecastFromIdleDelayMs.ToString();
+        TxtCastSplashConfirm.Text = f.CastSplashConfirmMs.ToString();
+        TxtNoSplashTimeout.Text = f.NoSplashTimeoutMs.ToString();
         ChkAutoSwitchRod.IsChecked = f.AutoSwitchRodEnabled;
         TxtSwitchRodDelay.Text = f.SwitchRodDelayMs.ToString();
         TxtSwitchRodRecast.Text = f.SwitchRodRecastMs.ToString();
@@ -356,6 +359,7 @@ public partial class SettingsWindow : Window
         f.CastPhrases = ParsePhrases(TxtCastPhrases.Text);
         f.BitePhrases = ParsePhrases(TxtBitePhrases.Text);
         f.ReelPhrases = ParsePhrases(TxtReelPhrases.Text);
+        f.SplashPhrases = ParsePhrases(TxtSplashPhrases.Text);
         f.CastCooldownMs = int.Parse(TxtCastCooldown.Text);
         f.RecastDelayMs = int.Parse(TxtRecastDelay.Text);
         f.FishingTimeoutMs = int.Parse(TxtFishingTimeout.Text);
@@ -363,6 +367,10 @@ public partial class SettingsWindow : Window
         f.AutoRecastFromIdleEnabled = ChkAutoRecastIdle.IsChecked == true;
         if (int.TryParse(TxtAutoRecastIdleDelay.Text, out var idleDelay))
             f.AutoRecastFromIdleDelayMs = Math.Max(1000, idleDelay);
+        if (int.TryParse(TxtCastSplashConfirm.Text, out var castSplash))
+            f.CastSplashConfirmMs = Math.Max(1000, castSplash);
+        if (int.TryParse(TxtNoSplashTimeout.Text, out var noSplash))
+            f.NoSplashTimeoutMs = Math.Max(500, noSplash);
         f.AutoSwitchRodEnabled = ChkAutoSwitchRod.IsChecked == true;
         f.SwitchRodDelayMs = int.Parse(TxtSwitchRodDelay.Text);
         f.SwitchRodRecastMs = int.Parse(TxtSwitchRodRecast.Text);

@@ -89,6 +89,7 @@ public partial class FishingPanel : UserControl
                 FishingState.Fishing => "钓鱼中 — 等待咬钩...",
                 FishingState.ReelingIn => "收回中 — 已提竿",
                 FishingState.ReeledIn => "已收回 — 准备重抛",
+                FishingState.Probing => "探测中 — 确认鱼漂状态",
                 _ => "状态未知"
             };
         });

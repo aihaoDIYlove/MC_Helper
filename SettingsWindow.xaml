@@ -717,6 +717,13 @@
                                                Margin="0,0,0,4"/>
                                     <TextBox x:Name="TxtReelPhrases"
                                              MinHeight="52" TextWrapping="Wrap"
+                                             Style="{StaticResource CardTextBox}"
+                                             Margin="0,0,0,10"/>
+                                    <TextBlock Text="浮漂位于水中识别短语"
+                                               Style="{StaticResource SettingLabel}"
+                                               Margin="0,0,0,4"/>
+                                    <TextBox x:Name="TxtSplashPhrases"
+                                             MinHeight="52" TextWrapping="Wrap"
                                              Style="{StaticResource CardTextBox}"/>
                                 </StackPanel>
                             </Border>
@@ -730,7 +737,7 @@
                                                Text="延迟设置 (ms)"/>
                                     <CheckBox x:Name="ChkAutoRecastIdle"
                                               Style="{StaticResource FlatCheck}"
-                                              Content="Idle 超时自动抛竿（意外收杆后自动恢复）"
+                                              Content="待抛竿状态 超时自动抛竿（意外收杆后自动恢复）"
                                               Margin="0,0,0,6"/>
                                     <Grid HorizontalAlignment="Left" Margin="0,4,0,0">
                                         <Grid.ColumnDefinitions>
@@ -739,6 +746,8 @@
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
                                         <Grid.RowDefinitions>
+                                            <RowDefinition Height="36"/>
+                                            <RowDefinition Height="36"/>
                                             <RowDefinition Height="36"/>
                                             <RowDefinition Height="36"/>
                                             <RowDefinition Height="36"/>
@@ -789,6 +798,24 @@
                                         <TextBlock Grid.Row="4" Grid.Column="2"
                                                    Style="{StaticResource SubLabel}"
                                                    Text="停在 Idle 超过此时间自动右键抛竿（默认 15 秒）"
+                                                   Margin="10,0,0,0"/>
+                                        <TextBlock Text="水花确认" Grid.Row="5"
+                                                   Style="{StaticResource SettingLabel}"/>
+                                        <TextBox x:Name="TxtCastSplashConfirm"
+                                                 Grid.Row="5" Grid.Column="1" Width="60"
+                                                 Style="{StaticResource CardTextBox}"/>
+                                        <TextBlock Grid.Row="5" Grid.Column="2"
+                                                   Style="{StaticResource SubLabel}"
+                                                   Text="待抛竿状态时持续识别到水中短语多久，确认鱼漂在水中（默认 3 秒）"
+                                                   Margin="10,0,0,0"/>
+                                        <TextBlock Text="水花消失" Grid.Row="6"
+                                                   Style="{StaticResource SettingLabel}"/>
+                                        <TextBox x:Name="TxtNoSplashTimeout"
+                                                 Grid.Row="6" Grid.Column="1" Width="60"
+                                                 Style="{StaticResource CardTextBox}"/>
+                                        <TextBlock Grid.Row="6" Grid.Column="2"
+                                                   Style="{StaticResource SubLabel}"
+                                                   Text="钓鱼中水中短语消失多久判定鱼漂不在水中，触发状态探测（默认 3 秒）"
                                                    Margin="10,0,0,0"/>
                                     </Grid>
                                 </StackPanel>

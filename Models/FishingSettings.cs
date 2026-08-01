@@ -18,18 +18,24 @@ public class FishingSettings
     public List<string> CastPhrases { get; set; } = new() { "浮漂甩出" };
     public List<string> BitePhrases { get; set; } = new() { "浮漂溅起水花" };
     public List<string> ReelPhrases { get; set; } = new() { "浮漂收回" };
+    /// <summary>水中状态短语：鱼漂在水中时持续出现的字幕（咬钩时是额外的"浮漂溅起水花"）</summary>
+    public List<string> SplashPhrases { get; set; } = new() { "溅起水花" };
 
     public int CastCooldownMs { get; set; } = 2000;
     public int RecastDelayMs { get; set; } = 400;
+    /// <summary>待抛竿状态下，持续识别到水中短语多久 (ms) 确认鱼漂在水中（默认 3 秒）</summary>
+    public int CastSplashConfirmMs { get; set; } = 3000;
+    /// <summary>钓鱼中，水中短语消失多久 (ms) 判定鱼漂不在水中，触发状态探测（默认 3 秒）</summary>
+    public int NoSplashTimeoutMs { get; set; } = 3000;
     /// <summary>ReelingIn 超时兜底 (ms)：提杆后最久等多久未识别到"收回"，强制重抛</summary>
     public int ReelingInTimeoutMs { get; set; } = 6000;
 
     /// <summary>钓鱼超时 (ms)：等待鱼上钩超过此时间未检测到咬钩，强制重抛（防止勾到溺尸等）</summary>
-    public int FishingTimeoutMs { get; set; } = 120_000; // 2 分钟
+    public int FishingTimeoutMs { get; set; } = 45_000; // 45 秒
 
     public bool AutoFishEnabled { get; set; } = true;
 
-    /// <summary>空闲超时自动抛竿：停在 Idle 超过此时间后自动右键抛竿（如意外收杆）</summary>
+    /// <summary>空闲超时自动抛竿：停在 待抛竿 状态超过此时间后自动右键抛竿（如意外收杆）</summary>
     public bool AutoRecastFromIdleEnabled { get; set; } = true;
     /// <summary>空闲超时自动抛竿延迟 (ms)，默认 15 秒</summary>
     public int AutoRecastFromIdleDelayMs { get; set; } = 15_000;
