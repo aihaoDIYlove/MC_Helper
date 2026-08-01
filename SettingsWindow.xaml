@@ -646,7 +646,7 @@
                                 <StackPanel>
                                     <TextBlock Style="{StaticResource CardHeader}"
                                                Text="检测"/>
-                                    <TextBlock Text="轮询间隔"
+                                    <TextBlock Text="OCR 识别间隔（调高可改善漏识别问题，但增加性能开销）"
                                                Style="{StaticResource SettingLabel}"
                                                Margin="0,0,0,6"/>
                                     <StackPanel Margin="0,0,0,6">
@@ -751,8 +751,6 @@
                                             <RowDefinition Height="36"/>
                                             <RowDefinition Height="36"/>
                                             <RowDefinition Height="36"/>
-                                            <RowDefinition Height="36"/>
-                                            <RowDefinition Height="36"/>
                                         </Grid.RowDefinitions>
                                         <TextBlock Text="抛竿后冷却"
                                                    Style="{StaticResource SettingLabel}"/>
@@ -772,50 +770,32 @@
                                                    Style="{StaticResource SubLabel}"
                                                    Text="检测到收回后等待此时间，自动右键抛竿"
                                                    Margin="10,0,0,0"/>
-                                        <TextBlock Text="咬钩等待超时" Grid.Row="2"
+                                        <TextBlock Text="空闲自动抛竿" Grid.Row="2"
                                                    Style="{StaticResource SettingLabel}"/>
-                                        <TextBox x:Name="TxtFishingTimeout"
+                                        <TextBox x:Name="TxtAutoRecastIdleDelay"
                                                  Grid.Row="2" Grid.Column="1" Width="60"
                                                  Style="{StaticResource CardTextBox}"/>
                                         <TextBlock Grid.Row="2" Grid.Column="2"
                                                    Style="{StaticResource SubLabel}"
-                                                   Text="等待鱼上钩超过此时间则自动收杆重抛（如勾到溺尸）"
+                                                   Text="停在 待抛竿 状态超过此时间自动右键抛竿（默认 10 秒）"
                                                    Margin="10,0,0,0"/>
-                                        <TextBlock Text="收线识别超时" Grid.Row="3"
+                                        <TextBlock Text="水花确认" Grid.Row="3"
                                                    Style="{StaticResource SettingLabel}"/>
-                                        <TextBox x:Name="TxtReelingInTimeout"
+                                        <TextBox x:Name="TxtCastSplashConfirm"
                                                  Grid.Row="3" Grid.Column="1" Width="60"
                                                  Style="{StaticResource CardTextBox}"/>
                                         <TextBlock Grid.Row="3" Grid.Column="2"
                                                    Style="{StaticResource SubLabel}"
-                                                   Text="提杆后超过此时间未识别到收回，强制重抛"
+                                                   Text="待抛竿状态时持续识别到水中短语多久，确认鱼漂在水中（默认 3 秒）"
                                                    Margin="10,0,0,0"/>
-                                        <TextBlock Text="空闲自动抛竿" Grid.Row="4"
+                                        <TextBlock Text="水花消失" Grid.Row="4"
                                                    Style="{StaticResource SettingLabel}"/>
-                                        <TextBox x:Name="TxtAutoRecastIdleDelay"
+                                        <TextBox x:Name="TxtNoSplashTimeout"
                                                  Grid.Row="4" Grid.Column="1" Width="60"
                                                  Style="{StaticResource CardTextBox}"/>
                                         <TextBlock Grid.Row="4" Grid.Column="2"
                                                    Style="{StaticResource SubLabel}"
-                                                   Text="停在 Idle 超过此时间自动右键抛竿（默认 15 秒）"
-                                                   Margin="10,0,0,0"/>
-                                        <TextBlock Text="水花确认" Grid.Row="5"
-                                                   Style="{StaticResource SettingLabel}"/>
-                                        <TextBox x:Name="TxtCastSplashConfirm"
-                                                 Grid.Row="5" Grid.Column="1" Width="60"
-                                                 Style="{StaticResource CardTextBox}"/>
-                                        <TextBlock Grid.Row="5" Grid.Column="2"
-                                                   Style="{StaticResource SubLabel}"
-                                                   Text="待抛竿状态时持续识别到水中短语多久，确认鱼漂在水中（默认 3 秒）"
-                                                   Margin="10,0,0,0"/>
-                                        <TextBlock Text="水花消失" Grid.Row="6"
-                                                   Style="{StaticResource SettingLabel}"/>
-                                        <TextBox x:Name="TxtNoSplashTimeout"
-                                                 Grid.Row="6" Grid.Column="1" Width="60"
-                                                 Style="{StaticResource CardTextBox}"/>
-                                        <TextBlock Grid.Row="6" Grid.Column="2"
-                                                   Style="{StaticResource SubLabel}"
-                                                   Text="钓鱼中水中短语消失多久判定鱼漂不在水中，触发状态探测（默认 3 秒）"
+                                                   Text="钓鱼中水中短语消失多久判定鱼漂不在水中，触发状态探测（默认 4 秒）"
                                                    Margin="10,0,0,0"/>
                                     </Grid>
                                 </StackPanel>

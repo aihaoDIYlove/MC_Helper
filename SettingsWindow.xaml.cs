@@ -327,8 +327,6 @@ public partial class SettingsWindow : Window
         TxtSplashPhrases.Text = string.Join(", ", f.SplashPhrases);
         TxtCastCooldown.Text = f.CastCooldownMs.ToString();
         TxtRecastDelay.Text = f.RecastDelayMs.ToString();
-        TxtFishingTimeout.Text = f.FishingTimeoutMs.ToString();
-        TxtReelingInTimeout.Text = f.ReelingInTimeoutMs.ToString();
         ChkAutoRecastIdle.IsChecked = f.AutoRecastFromIdleEnabled;
         TxtAutoRecastIdleDelay.Text = f.AutoRecastFromIdleDelayMs.ToString();
         TxtCastSplashConfirm.Text = f.CastSplashConfirmMs.ToString();
@@ -362,8 +360,6 @@ public partial class SettingsWindow : Window
         f.SplashPhrases = ParsePhrases(TxtSplashPhrases.Text);
         f.CastCooldownMs = int.Parse(TxtCastCooldown.Text);
         f.RecastDelayMs = int.Parse(TxtRecastDelay.Text);
-        f.FishingTimeoutMs = int.Parse(TxtFishingTimeout.Text);
-        f.ReelingInTimeoutMs = int.Parse(TxtReelingInTimeout.Text);
         f.AutoRecastFromIdleEnabled = ChkAutoRecastIdle.IsChecked == true;
         if (int.TryParse(TxtAutoRecastIdleDelay.Text, out var idleDelay))
             f.AutoRecastFromIdleDelayMs = Math.Max(1000, idleDelay);

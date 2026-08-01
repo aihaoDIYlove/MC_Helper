@@ -138,18 +138,6 @@ public class FishingStateMachine
             _cooldownActive = false;
         }
 
-        // 超时兜底：超过 FishingTimeoutMs 未检测到咬钩，强制重抛（可能勾到溺尸等）
-        var fishingElapsed = (now - _stateEnteredAt).TotalMilliseconds;
-        if (fishingElapsed >= _settings.FishingTimeoutMs)
-        {
-            DebugInfo?.Invoke($"[状态机] Fishing 超时 {fishingElapsed / 1000:F0}s，强制重抛");
-            RightClickRequested?.Invoke("钓鱼超时重抛");
-            _lastSplashSeenAt = now;
-            _cooldownActive = true;
-            TransitionTo(FishingState.Fishing, "超时强制重抛");
-            return;
-        }
-
         // 咬钩：额外出现的"浮漂溅起水花"（必须先于 SplashPhrases，因后者是其子串）
         if (FuzzyMatchAny(textLines, _settings.BitePhrases))
         {
@@ -180,18 +168,6 @@ public class FishingStateMachine
     {
         if (!_settings.AutoFishEnabled) return;
 
-        // 超时兜底：若提杆后超过 ReelingInTimeoutMs (默认 6000ms) 仍未识别到"浮漂收回"，
-        // 直接发右键抛竿 + 回到 Fishing（鱼还在手里，重新试）
-        var elapsed = (DateTime.Now - _stateEnteredAt).TotalMilliseconds;
-        if (elapsed >= _settings.ReelingInTimeoutMs)
-        {
-            DebugInfo?.Invoke($"[状态机] ReelingIn 超时 {elapsed:F0}ms，强制重抛");
-            RightClickRequested?.Invoke("ReelingIn 超时重抛");
-            _cooldownActive = true;
-            TransitionTo(FishingState.Fishing, "超时强制重抛");
-            return;
-        }
-
         if (FuzzyMatchAny(textLines, _settings.ReelPhrases))
         {
             var brokenPhrases = _settings.BrokenPhrases;
@@ -215,6 +191,14 @@ public class FishingStateMachine
             {
                 TransitionTo(FishingState.ReeledIn, "检测到收回");
             }
+            return;
+        }
+
+        // 水花消失超过 NoSplashTimeoutMs → 浮漂已离开水面，确认收回完成（兜底"浮漂收回"字幕漏识别）
+        if ((DateTime.Now - _lastSplashSeenAt).TotalMilliseconds >= _settings.NoSplashTimeoutMs)
+        {
+            DebugInfo?.Invoke("[状态机] ReelingIn 水花消失，确认收回完成");
+            TransitionTo(FishingState.ReeledIn, "水花消失确认收回");
         }
     }
 

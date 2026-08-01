@@ -166,7 +166,7 @@ public class DetectionLoop : IDisposable
                 DebugInfo?.Invoke($"OCR({lines.Count}行): {joined}");
 
             // 始终调用 Process，即使 OCR 返回空行。
-            // 时间驱动的状态（ReelingIn 超时、ReeledIn 倒计时重抛）不依赖 OCR 结果。
+            // 时间驱动的状态（ReeledIn 倒计时重抛、水花消失判定）不依赖 OCR 结果。
             _fsm.Process(lines);
         }
         catch (Exception ex)
